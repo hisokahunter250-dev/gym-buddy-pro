@@ -16,13 +16,14 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
 });
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof UserCheck; adminOnly?: boolean };
+const NAV: NavItem[] = [
   { to: "/attendance", label: "الحضور", icon: UserCheck },
   { to: "/members", label: "الأعضاء", icon: Users },
   { to: "/stats", label: "إحصائيات", icon: BarChart3 },
   { to: "/finance", label: "المالية", icon: Wallet },
   { to: "/settings", label: "الإعدادات", icon: SettingsIcon, adminOnly: true },
-] as const;
+];
 
 function AuthLayout() {
   const { user } = Route.useRouteContext();
