@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Check, UserPlus, LogIn, LogOut as LogOutIcon, Search } from "lucide-react";
 import { toast } from "sonner";
-import type { Member, TrainingType, AttendanceRow, Payment } from "@/lib/gym-types";
+import type { Member, TrainingType, AttendanceRow } from "@/lib/gym-types";
 
 export const Route = createFileRoute("/_authenticated/attendance")({
   head: () => ({ meta: [{ title: "الحضور اليومي - الجيم" }] }),
@@ -37,6 +37,8 @@ function AttendancePage() {
   const [newPhone, setNewPhone] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newMonths, setNewMonths] = useState("1");
+  const [newTraining, setNewTraining] = useState<string>("");
+  const [subType, setSubType] = useState<"monthly" | "open">("monthly");
   const [nextCode, setNextCode] = useState<number | null>(null);
 
   const { data: trainings = [] } = useQuery({
@@ -44,13 +46,23 @@ function AttendancePage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("training_types").select("*").order("sort_order");
       if (error) throw error;
-      return data as TrainingType[];
+      return (data ?? []) as TrainingType[];
     },
   });
 
   useEffect(() => {
     if (!trainingType && trainings.length) setTrainingType(trainings[0].name);
-  }, [trainings, trainingType]);
+    if (!newTraining && trainings.length) {
+      setNewTraining(trainings[0].name);
+      setNewAmount(String(trainings[0].price || ""));
+    }
+  }, [trainings, trainingType, newTraining]);
+
+  const onPickNewTraining = (name: string) => {
+    setNewTraining(name);
+    const t = trainings.find(x => x.name === name);
+    if (t) setNewAmount(String(t.price || ""));
+  };
 
   const { data: matches = [] } = useQuery({
     queryKey: ["members-search", search],
@@ -81,7 +93,6 @@ function AttendancePage() {
     refetchInterval: 15000,
   });
 
-  // Fetch next code when entering new mode
   useEffect(() => {
     if (mode !== "new") return;
     supabase.rpc("next_member_code").then(({ data }) => setNextCode(data as number));
@@ -113,7 +124,8 @@ function AttendancePage() {
   const addNewMember = async () => {
     if (!newName.trim()) return toast.error("ادخل اسم العميل");
     if (!newAmount || Number(newAmount) <= 0) return toast.error("ادخل مبلغ الاشتراك");
-    const months = Math.max(1, Number(newMonths) || 1);
+    if (!newTraining) return toast.error("اختر نوع التدريب");
+    const months = subType === "monthly" ? Math.max(1, Number(newMonths) || 1) : 0;
     const code = nextCode ?? 1001;
     const { data: u } = await supabase.auth.getUser();
 
@@ -123,16 +135,20 @@ function AttendancePage() {
     if (error) return toast.error(error.message);
 
     const start = new Date();
-    const end = new Date(start); end.setMonth(end.getMonth() + months);
+    const end = new Date(start);
+    if (subType === "monthly") end.setMonth(end.getMonth() + months);
+    else end.setFullYear(end.getFullYear() + 10); // open-ended
     await supabase.from("payments").insert({
       member_id: member.id,
       amount: Number(newAmount),
       duration_months: months,
       start_date: todayISO(),
       end_date: end.toISOString().slice(0, 10),
+      notes: `${newTraining}${subType === "open" ? " • اشتراك مفتوح" : ""}`,
       recorded_by: u.user?.id,
     });
 
+    setTrainingType(newTraining);
     toast.success(`تم إضافة العضو • الكود ${code}`);
     setNewName(""); setNewPhone(""); setNewAmount(""); setNewMonths("1");
     setSelected(member as Member);
@@ -224,13 +240,39 @@ function AttendancePage() {
               <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} dir="ltr" className="text-right num" />
             </div>
             <div className="space-y-2">
+              <Label>نوع التدريب / الخطة</Label>
+              <Select value={newTraining} onValueChange={onPickNewTraining}>
+                <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                <SelectContent>
+                  {trainings.map(t => (
+                    <SelectItem key={t.id} value={t.name}>
+                      {t.name} {t.price ? `— ${t.price} ج.م` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>مبلغ الاشتراك (جنيه)</Label>
               <Input type="number" min="0" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="num" />
             </div>
-            <div className="space-y-2">
-              <Label>المدة (عدد الأشهر)</Label>
-              <Input type="number" min="1" value={newMonths} onChange={(e) => setNewMonths(e.target.value)} className="num" />
+            <div className="space-y-2 md:col-span-2">
+              <Label>نوع الاشتراك</Label>
+              <RadioGroup value={subType} onValueChange={(v) => setSubType(v as "monthly" | "open")} className="flex gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="monthly" id="st-m" /> <span>اشتراك شهري بعدد أشهر</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="open" id="st-o" /> <span>اشتراك حر / مفتوح</span>
+                </label>
+              </RadioGroup>
             </div>
+            {subType === "monthly" && (
+              <div className="space-y-2">
+                <Label>المدة (عدد الأشهر)</Label>
+                <Input type="number" min="1" value={newMonths} onChange={(e) => setNewMonths(e.target.value)} className="num" />
+              </div>
+            )}
           </div>
           <Button onClick={addNewMember} className="w-full font-bold" size="lg">
             <UserPlus className="size-5 ml-1" /> إضافة وتسجيل الاشتراك
