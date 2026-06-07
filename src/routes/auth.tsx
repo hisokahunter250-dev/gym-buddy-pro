@@ -22,9 +22,8 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/app" });
+      if (data.session) navigate({ to: "/attendance" });
     });
-    // Check if any profile exists (to enable first-time admin signup)
     supabase.from("profiles").select("id", { count: "exact", head: true }).then(({ count }) => {
       setHasUsers((count ?? 0) > 0);
     });
@@ -38,7 +37,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error("بيانات الدخول غير صحيحة");
     toast.success("تم الدخول بنجاح");
-    navigate({ to: "/app" });
+    navigate({ to: "/attendance" });
   };
 
   const onSignup = async (e: React.FormEvent<HTMLFormElement>) => {
