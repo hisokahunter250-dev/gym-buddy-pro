@@ -11,6 +11,7 @@ export type TrainingType = {
   id: string;
   name: string;
   sort_order: number;
+  price: number;
 };
 
 export type AttendanceRow = {
