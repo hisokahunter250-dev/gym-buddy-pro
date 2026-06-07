@@ -77,7 +77,7 @@ function AuthLayout() {
             return (
               <Link
                 key={n.to}
-                to={n.to}
+                to={n.to as "/attendance"}
                 className={cn(
                   "px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap",
                   active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
