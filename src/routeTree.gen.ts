@@ -12,10 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
-import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
+import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated.stats'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated.members'
+import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated.finance'
+import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated.attendance'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -51,10 +52,16 @@ const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAttendanceRoute = AuthenticatedAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/attendance': typeof AuthenticatedAttendanceRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/members': typeof AuthenticatedMembersRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -63,6 +70,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/attendance': typeof AuthenticatedAttendanceRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/members': typeof AuthenticatedMembersRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -73,6 +81,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/attendance': typeof AuthenticatedAttendanceRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -80,14 +89,29 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/finance' | '/members' | '/settings' | '/stats'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/attendance'
+    | '/finance'
+    | '/members'
+    | '/settings'
+    | '/stats'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/finance' | '/members' | '/settings' | '/stats'
+  to:
+    | '/'
+    | '/auth'
+    | '/attendance'
+    | '/finance'
+    | '/members'
+    | '/settings'
+    | '/stats'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/attendance'
     | '/_authenticated/finance'
     | '/_authenticated/members'
     | '/_authenticated/settings'
@@ -151,10 +175,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/attendance': {
+      id: '/_authenticated/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AuthenticatedAttendanceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAttendanceRoute: typeof AuthenticatedAttendanceRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -162,6 +194,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAttendanceRoute: AuthenticatedAttendanceRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
