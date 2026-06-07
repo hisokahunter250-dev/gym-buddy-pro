@@ -1,0 +1,1 @@
+ALTER TABLE public.training_types ADD COLUMN IF NOT EXISTS price numeric NOT NULL DEFAULT 0;
