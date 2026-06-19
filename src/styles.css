@@ -100,30 +100,47 @@
 }
 
 .light {
-  --background: oklch(0.99 0.005 80);
-  --foreground: oklch(0.18 0.01 30);
+  --background: oklch(0.96 0.008 85);
+  --foreground: oklch(0.2 0.015 30);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 30);
+  --card-foreground: oklch(0.2 0.015 30);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 30);
-  --primary: oklch(0.55 0.22 25);
+  --popover-foreground: oklch(0.2 0.015 30);
+  --primary: oklch(0.5 0.19 25);
   --primary-foreground: oklch(0.99 0.005 80);
-  --secondary: oklch(0.96 0.01 80);
-  --secondary-foreground: oklch(0.18 0.01 30);
-  --muted: oklch(0.95 0.008 80);
+  --secondary: oklch(0.93 0.012 80);
+  --secondary-foreground: oklch(0.22 0.015 30);
+  --muted: oklch(0.9 0.01 80);
   --muted-foreground: oklch(0.45 0.02 60);
-  --accent: oklch(0.94 0.01 80);
-  --accent-foreground: oklch(0.18 0.01 30);
-  --border: oklch(0.9 0.01 80);
-  --input: oklch(0.95 0.008 80);
-  --ring: oklch(0.55 0.22 25);
-  --gold: oklch(0.7 0.16 75);
+  --accent: oklch(0.88 0.012 80);
+  --accent-foreground: oklch(0.2 0.015 30);
+  --border: oklch(0.78 0.015 80);
+  --input: oklch(0.95 0.01 80);
+  --ring: oklch(0.5 0.19 25);
+  --gold: oklch(0.65 0.16 75);
   --gold-foreground: oklch(0.99 0.005 80);
+  --success: oklch(0.65 0.18 145);
+  --success-foreground: oklch(0.99 0.005 80);
   --sidebar: oklch(0.98 0.005 80);
-  --sidebar-foreground: oklch(0.18 0.01 30);
-  --sidebar-border: oklch(0.9 0.01 80);
-  --sidebar-accent: oklch(0.94 0.01 80);
-  --sidebar-accent-foreground: oklch(0.18 0.01 30);
+  --sidebar-foreground: oklch(0.2 0.015 30);
+  --sidebar-border: oklch(0.82 0.015 80);
+  --sidebar-accent: oklch(0.93 0.012 80);
+  --sidebar-accent-foreground: oklch(0.2 0.015 30);
+  --shadow-card: 0 8px 28px -10px oklch(0 0 0 / 0.12);
+}
+
+.light body {
+  background-image:
+    radial-gradient(circle at 15% 10%, color-mix(in oklab, var(--primary) 6%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 85% 90%, color-mix(in oklab, var(--gold) 4%, transparent) 0%, transparent 50%);
+}
+
+.light hr,
+.light [role="separator"] {
+  height: 1.5px;
+  background-color: var(--border);
+  opacity: 1;
+  border: none;
 }
 
 .modern {
