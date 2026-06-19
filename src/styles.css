@@ -135,26 +135,20 @@
     radial-gradient(circle at 85% 90%, color-mix(in oklab, var(--gold) 5%, transparent) 0%, transparent 50%);
 }
 
-.light [class*="rounded"],
-.light .rounded-xl,
-.light .rounded-lg,
-.light .rounded-md {
-  --tw-border-opacity: 1;
-}
-
-.light .border,
-.light .border-b,
-.light .border-t,
-.light .border-l,
-.light .border-r,
-.light [class*="border-"] {
-  border-color: var(--border);
-}
-
 .light hr,
 .light [role="separator"] {
+  height: 1.5px;
   background-color: var(--border);
   opacity: 1;
+  border: none;
+}
+
+.light table tr {
+  border-bottom-width: 1.5px;
+}
+
+.light [class~="card"] {
+  border-width: 1.5px;
 }
 
 .modern {
