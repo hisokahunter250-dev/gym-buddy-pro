@@ -143,10 +143,6 @@
   border: none;
 }
 
-.light [class*="shadow-card"] {
-  box-shadow: 0 10px 32px -10px oklch(0 0 0 / 0.1);
-}
-
 .modern {
   --background: oklch(0.99 0.008 250);
   --foreground: oklch(0.2 0.04 260);
