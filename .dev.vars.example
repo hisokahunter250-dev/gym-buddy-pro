@@ -1,0 +1,6 @@
+# انسخ هذا الملف إلى .dev.vars واملأ القيم لاستخدام `wrangler dev` محلياً.
+# لا ترفع .dev.vars إلى Git (مضاف بالفعل في .gitignore).
+
+SUPABASE_URL="https://YOUR-PROJECT.supabase.co"
+SUPABASE_PUBLISHABLE_KEY="your-publishable-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
