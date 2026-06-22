@@ -35,6 +35,7 @@ function SettingsPage() {
         <TabsTrigger value="training">أنواع التدريب والأسعار</TabsTrigger>
         <TabsTrigger value="users">المستخدمون</TabsTrigger>
         <TabsTrigger value="security">كلمة سر المالية</TabsTrigger>
+        <TabsTrigger value="password">كلمة مرور المدير</TabsTrigger>
         <TabsTrigger value="theme">الستايل</TabsTrigger>
         <TabsTrigger value="backup">النسخ الاحتياطي</TabsTrigger>
       </TabsList>
@@ -42,6 +43,7 @@ function SettingsPage() {
       <TabsContent value="training"><TrainingTypesPanel /></TabsContent>
       <TabsContent value="users"><UsersPanel /></TabsContent>
       <TabsContent value="security"><FinancePasswordPanel /></TabsContent>
+      <TabsContent value="password"><AdminPasswordPanel /></TabsContent>
       <TabsContent value="theme"><ThemePanel /></TabsContent>
       <TabsContent value="backup"><BackupPanel /></TabsContent>
     </Tabs>
