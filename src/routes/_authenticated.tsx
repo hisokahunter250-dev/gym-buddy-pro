@@ -70,7 +70,7 @@ function AuthLayout() {
               <Dumbbell className="size-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-black leading-tight">نظام إدارة الجيم</h1>
+              <h1 className="text-lg font-black leading-tight">{gymName}</h1>
               <p className="text-xs text-muted-foreground">{profileName} {isAdmin && <span className="text-gold font-bold">• مدير</span>}</p>
             </div>
           </div>
