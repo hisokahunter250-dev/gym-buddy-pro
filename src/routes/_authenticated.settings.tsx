@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2, Plus, KeyRound, Save, Palette, Download, Upload, Database, Building2 } from "lucide-react";
+import { Trash2, Plus, KeyRound, Save, Palette, Download, Upload, Database, Building2, Shield, ShieldOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 import type { TrainingType } from "@/lib/gym-types";
 import { signUpWithUsername } from "@/lib/gym-auth";
@@ -35,6 +35,7 @@ function SettingsPage() {
         <TabsTrigger value="training">أنواع التدريب والأسعار</TabsTrigger>
         <TabsTrigger value="users">المستخدمون</TabsTrigger>
         <TabsTrigger value="security">كلمة سر المالية</TabsTrigger>
+        <TabsTrigger value="password">كلمة مرور المدير</TabsTrigger>
         <TabsTrigger value="theme">الستايل</TabsTrigger>
         <TabsTrigger value="backup">النسخ الاحتياطي</TabsTrigger>
       </TabsList>
@@ -42,6 +43,7 @@ function SettingsPage() {
       <TabsContent value="training"><TrainingTypesPanel /></TabsContent>
       <TabsContent value="users"><UsersPanel /></TabsContent>
       <TabsContent value="security"><FinancePasswordPanel /></TabsContent>
+      <TabsContent value="password"><AdminPasswordPanel /></TabsContent>
       <TabsContent value="theme"><ThemePanel /></TabsContent>
       <TabsContent value="backup"><BackupPanel /></TabsContent>
     </Tabs>
@@ -288,16 +290,86 @@ function UsersPanel() {
         </div>
       </div>
       <div className="space-y-2">
-        {users.map(u => (
-          <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-            <div>
-              <p className="font-semibold">{u.display_name || u.username}</p>
-              <p className="text-xs text-muted-foreground" dir="ltr">{u.username}</p>
-            </div>
-            <Badge className={u.role === "admin" ? "bg-gold text-gold-foreground" : ""}>{u.role === "admin" ? "مدير" : "موظف"}</Badge>
-          </div>
-        ))}
+        {users.map(u => <UserRow key={u.id} u={u} onChanged={() => qc.invalidateQueries({ queryKey: ["all-users"] })} />)}
       </div>
+    </Card>
+  );
+}
+
+function UserRow({ u, onChanged }: { u: { id: string; username: string; display_name: string | null; role: string }; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const isAdmin = u.role === "admin";
+
+  const toggleRole = async () => {
+    if (!confirm(isAdmin ? `إزالة صلاحية المدير من ${u.display_name || u.username}؟` : `ترقية ${u.display_name || u.username} إلى مدير؟`)) return;
+    setBusy(true);
+    let error;
+    if (isAdmin) {
+      ({ error } = await supabase.from("user_roles").delete().eq("user_id", u.id).eq("role", "admin"));
+      if (!error) {
+        const { data: rest } = await supabase.from("user_roles").select("id").eq("user_id", u.id);
+        if (!rest || rest.length === 0) {
+          await supabase.from("user_roles").insert({ user_id: u.id, role: "staff" } as any);
+        }
+      }
+    } else {
+      await supabase.from("user_roles").delete().eq("user_id", u.id);
+      ({ error } = await supabase.from("user_roles").insert({ user_id: u.id, role: "admin" } as any));
+    }
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("تم تحديث الصلاحية");
+    onChanged();
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2 flex-wrap">
+      <div>
+        <p className="font-semibold">{u.display_name || u.username}</p>
+        <p className="text-xs text-muted-foreground" dir="ltr">{u.username}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Badge className={isAdmin ? "bg-gold text-gold-foreground" : ""}>{isAdmin ? "مدير" : "موظف"}</Badge>
+        <Button size="sm" variant="outline" onClick={toggleRole} disabled={busy}>
+          {isAdmin ? <><ShieldOff className="size-4 ml-1" />إزالة المدير</> : <><Shield className="size-4 ml-1" />جعله مدير</>}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AdminPasswordPanel() {
+  const [pwd, setPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const save = async () => {
+    if (pwd.length < 6) return toast.error("كلمة المرور 6 أحرف على الأقل");
+    if (pwd !== confirmPwd) return toast.error("كلمتا المرور غير متطابقتين");
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("تم تغيير كلمة المرور");
+    setPwd(""); setConfirmPwd("");
+  };
+
+  return (
+    <Card className="p-6 space-y-4 max-w-md">
+      <div className="flex items-center gap-2">
+        <Lock className="size-5 text-primary" />
+        <h3 className="font-black text-lg">تغيير كلمة مرور الحساب الحالي</h3>
+      </div>
+      <p className="text-sm text-muted-foreground">يغيّر كلمة مرور الحساب الذي سجّلت به الدخول.</p>
+      <div className="space-y-2">
+        <Label>كلمة المرور الجديدة</Label>
+        <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} dir="ltr" className="text-right" />
+      </div>
+      <div className="space-y-2">
+        <Label>تأكيد كلمة المرور</Label>
+        <Input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} dir="ltr" className="text-right" />
+      </div>
+      <Button onClick={save} disabled={loading} className="font-bold"><Save className="size-4 ml-1" />{loading ? "..." : "حفظ"}</Button>
     </Card>
   );
 }
