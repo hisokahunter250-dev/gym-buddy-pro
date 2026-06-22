@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2, Plus, KeyRound, Save, Palette } from "lucide-react";
+import { Trash2, Plus, KeyRound, Save, Palette, Download, Upload, Database, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TrainingType } from "@/lib/gym-types";
 import { signUpWithUsername } from "@/lib/gym-auth";
+import { exportJSON, exportXLSX, importFromFile } from "@/lib/backup";
+import { useRef } from "react";
 import { useTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -27,18 +29,133 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   return (
-    <Tabs defaultValue="training" className="space-y-4">
-      <TabsList>
+    <Tabs defaultValue="general" className="space-y-4">
+      <TabsList className="flex-wrap h-auto">
+        <TabsTrigger value="general">عام</TabsTrigger>
         <TabsTrigger value="training">أنواع التدريب والأسعار</TabsTrigger>
         <TabsTrigger value="users">المستخدمون</TabsTrigger>
         <TabsTrigger value="security">كلمة سر المالية</TabsTrigger>
         <TabsTrigger value="theme">الستايل</TabsTrigger>
+        <TabsTrigger value="backup">النسخ الاحتياطي</TabsTrigger>
       </TabsList>
+      <TabsContent value="general"><GeneralPanel /></TabsContent>
       <TabsContent value="training"><TrainingTypesPanel /></TabsContent>
       <TabsContent value="users"><UsersPanel /></TabsContent>
       <TabsContent value="security"><FinancePasswordPanel /></TabsContent>
       <TabsContent value="theme"><ThemePanel /></TabsContent>
+      <TabsContent value="backup"><BackupPanel /></TabsContent>
     </Tabs>
+  );
+}
+
+function GeneralPanel() {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { data } = useQuery({
+    queryKey: ["gym-name-setting"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "gym_name").maybeSingle();
+      return data?.value ?? "نظام إدارة الجيم";
+    },
+  });
+  useEffect(() => { if (data) setName(data); }, [data]);
+
+  const save = async () => {
+    if (!name.trim()) return toast.error("ادخل اسم الجيم");
+    setLoading(true);
+    const { error } = await supabase.from("app_settings").upsert({ key: "gym_name", value: name.trim(), updated_at: new Date().toISOString() });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("تم حفظ اسم الجيم");
+    qc.invalidateQueries({ queryKey: ["gym-name-setting"] });
+    qc.invalidateQueries({ queryKey: ["gym-name"] });
+  };
+
+  return (
+    <Card className="p-6 space-y-4 max-w-xl">
+      <div className="flex items-center gap-2">
+        <Building2 className="size-5 text-primary" />
+        <h3 className="font-black text-lg">اسم الجيم</h3>
+      </div>
+      <p className="text-sm text-muted-foreground">يظهر في أعلى الصفحات بدلاً من "نظام إدارة الجيم"</p>
+      <div className="space-y-2">
+        <Label>الاسم</Label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثال: جيم النصر" />
+      </div>
+      <Button onClick={save} disabled={loading} className="font-bold"><Save className="size-4 ml-1" />{loading ? "..." : "حفظ"}</Button>
+    </Card>
+  );
+}
+
+function BackupPanel() {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState<"json" | "xlsx" | "import" | null>(null);
+
+  const doExport = async (type: "json" | "xlsx") => {
+    setBusy(type);
+    try {
+      if (type === "json") await exportJSON(); else await exportXLSX();
+      toast.success("تم تصدير النسخة الاحتياطية");
+    } catch (e: any) {
+      toast.error(e.message || "فشل التصدير");
+    } finally { setBusy(null); }
+  };
+
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!confirm("سيتم استيراد البيانات وإضافتها/تحديثها في قاعدة البيانات. هل أنت متأكد؟")) {
+      e.target.value = "";
+      return;
+    }
+    setBusy("import");
+    try {
+      const res = await importFromFile(f);
+      const total = res.reduce((s, r) => s + r.inserted, 0);
+      toast.success(`تم استيراد ${total} سجل`);
+      qc.invalidateQueries();
+    } catch (err: any) {
+      toast.error(err.message || "فشل الاستيراد");
+    } finally {
+      setBusy(null);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <Card className="p-6 space-y-6 max-w-2xl">
+      <div className="flex items-center gap-2">
+        <Database className="size-5 text-primary" />
+        <h3 className="font-black text-lg">النسخ الاحتياطي</h3>
+      </div>
+
+      <div className="space-y-3">
+        <h4 className="font-bold">تصدير نسخة احتياطية</h4>
+        <p className="text-sm text-muted-foreground">يتم تنزيل كل البيانات (الأعضاء، الحضور، المدفوعات، الإعدادات).</p>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => doExport("xlsx")} disabled={!!busy} className="font-bold">
+            <Download className="size-4 ml-1" />{busy === "xlsx" ? "..." : "تصدير Excel"}
+          </Button>
+          <Button onClick={() => doExport("json")} disabled={!!busy} variant="outline" className="font-bold">
+            <Download className="size-4 ml-1" />{busy === "json" ? "..." : "تصدير JSON"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-3 pt-4 border-t">
+        <h4 className="font-bold">استيراد نسخة احتياطية</h4>
+        <p className="text-sm text-muted-foreground">
+          اختر ملف JSON أو Excel سبق تصديره. السجلات الموجودة بنفس المعرّف سيتم تحديثها، والجديدة ستُضاف.
+        </p>
+        <input ref={fileRef} type="file" accept=".json,.xlsx,.xls" className="hidden" onChange={onPick} />
+        <Button onClick={() => fileRef.current?.click()} disabled={!!busy} variant="secondary" className="font-bold">
+          <Upload className="size-4 ml-1" />{busy === "import" ? "جاري الاستيراد..." : "اختيار ملف للاستيراد"}
+        </Button>
+      </div>
+    </Card>
   );
 }
 

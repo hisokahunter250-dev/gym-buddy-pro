@@ -40,6 +40,14 @@ function AuthLayout() {
     },
   });
 
+  const { data: gymName = "نظام إدارة الجيم" } = useQuery({
+    queryKey: ["gym-name"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "gym_name").maybeSingle();
+      return data?.value || "نظام إدارة الجيم";
+    },
+  });
+
   useEffect(() => {
     supabase.from("profiles").select("display_name, username").eq("id", user.id).maybeSingle().then(({ data }) => {
       setProfileName(data?.display_name || data?.username || "");
@@ -62,7 +70,7 @@ function AuthLayout() {
               <Dumbbell className="size-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-black leading-tight">نظام إدارة الجيم</h1>
+              <h1 className="text-lg font-black leading-tight">{gymName}</h1>
               <p className="text-xs text-muted-foreground">{profileName} {isAdmin && <span className="text-gold font-bold">• مدير</span>}</p>
             </div>
           </div>

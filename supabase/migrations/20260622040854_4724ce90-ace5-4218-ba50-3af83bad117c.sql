@@ -1,0 +1,2 @@
+CREATE POLICY "all auth read gym name" ON public.app_settings FOR SELECT TO authenticated USING (key = 'gym_name');
+INSERT INTO public.app_settings (key, value) VALUES ('gym_name', 'نظام إدارة الجيم') ON CONFLICT (key) DO NOTHING;
