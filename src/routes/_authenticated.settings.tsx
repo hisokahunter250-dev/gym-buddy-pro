@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2, Plus, KeyRound, Save, Palette } from "lucide-react";
+import { Trash2, Plus, KeyRound, Save, Palette, Download, Upload, Database, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TrainingType } from "@/lib/gym-types";
 import { signUpWithUsername } from "@/lib/gym-auth";
+import { exportJSON, exportXLSX, importFromFile } from "@/lib/backup";
+import { useRef } from "react";
 import { useTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
