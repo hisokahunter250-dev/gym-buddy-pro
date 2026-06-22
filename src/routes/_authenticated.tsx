@@ -40,6 +40,14 @@ function AuthLayout() {
     },
   });
 
+  const { data: gymName = "نظام إدارة الجيم" } = useQuery({
+    queryKey: ["gym-name"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "gym_name").maybeSingle();
+      return data?.value || "نظام إدارة الجيم";
+    },
+  });
+
   useEffect(() => {
     supabase.from("profiles").select("display_name, username").eq("id", user.id).maybeSingle().then(({ data }) => {
       setProfileName(data?.display_name || data?.username || "");
