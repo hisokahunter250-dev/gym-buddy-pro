@@ -333,6 +333,10 @@ function AttendancePage() {
                 <Input type="number" min="1" value={newMonths} onChange={(e) => setNewMonths(e.target.value)} className="num" />
               </div>
             )}
+            <div className="space-y-2">
+              <Label>عدد الحصص <span className="text-xs text-muted-foreground">(0 = غير محدود / بالشهر)</span></Label>
+              <Input type="number" min="0" value={newSessions} onChange={(e) => setNewSessions(e.target.value)} className="num" />
+            </div>
           </div>
           <Button onClick={addNewMember} className="w-full font-bold" size="lg">
             <UserPlus className="size-5 ml-1" /> إضافة وتسجيل الاشتراك
