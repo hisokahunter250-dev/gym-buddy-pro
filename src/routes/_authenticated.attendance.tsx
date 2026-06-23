@@ -253,14 +253,34 @@ function AttendancePage() {
           )}
 
           {selected && (
-            <div className="flex items-center justify-between p-4 rounded-lg gradient-hero shadow-glow">
-              <div className="text-primary-foreground">
-                <p className="text-sm opacity-90">العضو المحدد</p>
-                <p className="text-xl font-black">{selected.name} • #{selected.code}</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 rounded-lg gradient-hero shadow-glow flex-wrap gap-3">
+                <div className="text-primary-foreground">
+                  <p className="text-sm opacity-90">العضو المحدد</p>
+                  <p className="text-xl font-black">{selected.name} • #{selected.code}</p>
+                  {status?.kind === "active" && (
+                    <p className="text-sm opacity-95 mt-1">
+                      {status.expired
+                        ? "⛔ الاشتراك منتهي"
+                        : status.remaining !== null
+                          ? status.remaining > 0
+                            ? <>متبقي <span className="num font-black">{status.remaining}</span> من <span className="num">{status.total}</span> حصة</>
+                            : "⛔ انتهت الحصص"
+                          : <>اشتراك شهري — ينتهي <span className="num">{status.payment.end_date}</span></>}
+                    </p>
+                  )}
+                  {status?.kind === "none" && <p className="text-sm opacity-95 mt-1">⚠ لا يوجد اشتراك مسجل</p>}
+                </div>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="font-bold"
+                  onClick={() => recordAttendance(selected)}
+                  disabled={status?.kind === "active" && (status.expired || (status.remaining !== null && status.remaining <= 0))}
+                >
+                  <Check className="size-5 ml-1" /> تسجيل الحضور
+                </Button>
               </div>
-              <Button size="lg" variant="secondary" className="font-bold" onClick={() => recordAttendance(selected)}>
-                <Check className="size-5 ml-1" /> تسجيل الحضور
-              </Button>
             </div>
           )}
         </Card>
