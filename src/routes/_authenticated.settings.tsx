@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2, Plus, KeyRound, Save, Palette, Download, Upload, Database, Building2, Shield, ShieldOff, Lock } from "lucide-react";
+import { Trash2, Plus, KeyRound, Save, Palette, Download, Upload, Database, Building2, Shield, ShieldOff, Lock, UserX } from "lucide-react";
 import { toast } from "sonner";
 import type { TrainingType } from "@/lib/gym-types";
 import { signUpWithUsername } from "@/lib/gym-auth";
 import { exportJSON, exportXLSX, importFromFile } from "@/lib/backup";
+import { deleteAppUser } from "@/lib/admin.functions";
 import { useRef } from "react";
 import { useTheme, type Theme } from "@/lib/theme";
 
@@ -165,6 +166,7 @@ function TrainingTypesPanel() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [sessions, setSessions] = useState("");
 
   const { data: types = [] } = useQuery({
     queryKey: ["training_types"],
@@ -181,9 +183,10 @@ function TrainingTypesPanel() {
       name: name.trim(),
       sort_order: types.length + 1,
       price: Number(price) || 0,
+      sessions_count: Number(sessions) || 0,
     } as any);
     if (error) return toast.error(error.message);
-    setName(""); setPrice("");
+    setName(""); setPrice(""); setSessions("");
     toast.success("تمت الإضافة");
     qc.invalidateQueries({ queryKey: ["training_types"] });
   };
@@ -197,9 +200,11 @@ function TrainingTypesPanel() {
   return (
     <Card className="p-6 space-y-4">
       <h3 className="font-black text-lg">أنواع التدريب والأسعار</h3>
-      <div className="grid md:grid-cols-[1fr_180px_auto] gap-2">
+      <p className="text-sm text-muted-foreground">عدد الحصص = 0 يعني اشتراك بالشهر (بدون عدّ حصص).</p>
+      <div className="grid md:grid-cols-[1fr_140px_140px_auto] gap-2">
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسم نوع التدريب (مثال: كارديو)" />
         <Input type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="السعر (ج.م)" className="num" />
+        <Input type="number" min="0" value={sessions} onChange={(e) => setSessions(e.target.value)} placeholder="عدد الحصص" className="num" />
         <Button onClick={add}><Plus className="size-4 ml-1" />إضافة</Button>
       </div>
       <div className="space-y-2">
@@ -211,24 +216,35 @@ function TrainingTypesPanel() {
 
 function TrainingRow({ t, onChanged, onRemove }: { t: TrainingType; onChanged: () => void; onRemove: () => void }) {
   const [price, setPrice] = useState(String(t.price ?? 0));
+  const [sessions, setSessions] = useState(String(t.sessions_count ?? 0));
   const [saving, setSaving] = useState(false);
   useEffect(() => setPrice(String(t.price ?? 0)), [t.price]);
+  useEffect(() => setSessions(String(t.sessions_count ?? 0)), [t.sessions_count]);
 
   const save = async () => {
     setSaving(true);
-    const { error } = await supabase.from("training_types").update({ price: Number(price) || 0 } as any).eq("id", t.id);
+    const { error } = await supabase.from("training_types").update({
+      price: Number(price) || 0,
+      sessions_count: Number(sessions) || 0,
+    } as any).eq("id", t.id);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("تم تحديث السعر");
+    toast.success("تم الحفظ");
     onChanged();
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/30">
-      <span className="font-semibold flex-1">{t.name}</span>
-      <div className="flex items-center gap-2">
-        <Input type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="num w-28" />
-        <span className="text-xs text-muted-foreground">ج.م</span>
+    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/30 flex-wrap">
+      <span className="font-semibold flex-1 min-w-32">{t.name}</span>
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1">
+          <Input type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="num w-24" />
+          <span className="text-xs text-muted-foreground">ج.م</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Input type="number" min="0" value={sessions} onChange={(e) => setSessions(e.target.value)} className="num w-20" />
+          <span className="text-xs text-muted-foreground">حصة</span>
+        </div>
         <Button size="sm" variant="outline" onClick={save} disabled={saving}><Save className="size-4 ml-1" />حفظ</Button>
         <Button size="sm" variant="ghost" onClick={onRemove}><Trash2 className="size-4 text-destructive" /></Button>
       </div>
@@ -322,6 +338,20 @@ function UserRow({ u, onChanged }: { u: { id: string; username: string; display_
     onChanged();
   };
 
+  const removeUser = async () => {
+    if (!confirm(`حذف المستخدم ${u.display_name || u.username} نهائياً؟ لا يمكن التراجع.`)) return;
+    setBusy(true);
+    try {
+      await deleteAppUser({ data: { userId: u.id } });
+      toast.success("تم حذف المستخدم");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e.message || "فشل الحذف");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2 flex-wrap">
       <div>
@@ -332,6 +362,9 @@ function UserRow({ u, onChanged }: { u: { id: string; username: string; display_
         <Badge className={isAdmin ? "bg-gold text-gold-foreground" : ""}>{isAdmin ? "مدير" : "موظف"}</Badge>
         <Button size="sm" variant="outline" onClick={toggleRole} disabled={busy}>
           {isAdmin ? <><ShieldOff className="size-4 ml-1" />إزالة المدير</> : <><Shield className="size-4 ml-1" />جعله مدير</>}
+        </Button>
+        <Button size="sm" variant="destructive" onClick={removeUser} disabled={busy}>
+          <UserX className="size-4 ml-1" />حذف المستخدم
         </Button>
       </div>
     </div>

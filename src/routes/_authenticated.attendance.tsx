@@ -37,6 +37,7 @@ function AttendancePage() {
   const [newPhone, setNewPhone] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newMonths, setNewMonths] = useState("1");
+  const [newSessions, setNewSessions] = useState("0");
   const [newTraining, setNewTraining] = useState<string>("");
   const [subType, setSubType] = useState<"monthly" | "open">("monthly");
   const [nextCode, setNextCode] = useState<number | null>(null);
@@ -55,13 +56,17 @@ function AttendancePage() {
     if (!newTraining && trainings.length) {
       setNewTraining(trainings[0].name);
       setNewAmount(String(trainings[0].price || ""));
+      setNewSessions(String(trainings[0].sessions_count || 0));
     }
   }, [trainings, trainingType, newTraining]);
 
   const onPickNewTraining = (name: string) => {
     setNewTraining(name);
     const t = trainings.find(x => x.name === name);
-    if (t) setNewAmount(String(t.price || ""));
+    if (t) {
+      setNewAmount(String(t.price || ""));
+      setNewSessions(String(t.sessions_count || 0));
+    }
   };
 
   const { data: matches = [] } = useQuery({
@@ -98,8 +103,41 @@ function AttendancePage() {
     supabase.rpc("next_member_code").then(({ data }) => setNextCode(data as number));
   }, [mode]);
 
+  const { data: status } = useQuery({
+    queryKey: ["member-status", selected?.id],
+    enabled: !!selected?.id,
+    queryFn: async () => {
+      const { data: pay } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("member_id", selected!.id)
+        .order("start_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!pay) return { kind: "none" as const };
+      const today = todayISO();
+      const expired = pay.end_date < today;
+      let used = 0;
+      if ((pay as any).sessions_total > 0) {
+        const { count } = await supabase
+          .from("attendance")
+          .select("id", { count: "exact", head: true })
+          .eq("member_id", selected!.id)
+          .gte("attendance_date", pay.start_date);
+        used = count ?? 0;
+      }
+      const total = (pay as any).sessions_total as number;
+      const remaining = total > 0 ? Math.max(0, total - used) : null;
+      return { kind: "active" as const, payment: pay, expired, total, used, remaining };
+    },
+  });
+
   const recordAttendance = async (m: Member) => {
     if (!trainingType) return toast.error("اختر نوع التدريب");
+    if (status?.kind === "active") {
+      if (status.expired) return toast.error("الاشتراك منتهي");
+      if (status.remaining !== null && status.remaining <= 0) return toast.error("انتهت حصص الاشتراك");
+    }
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("attendance").insert({
       member_id: m.id,
@@ -112,6 +150,7 @@ function AttendancePage() {
     setSelected(null);
     setSearch("");
     qc.invalidateQueries({ queryKey: ["attendance-today"] });
+    qc.invalidateQueries({ queryKey: ["member-status"] });
   };
 
   const checkOut = async (id: string) => {
@@ -145,12 +184,13 @@ function AttendancePage() {
       start_date: todayISO(),
       end_date: end.toISOString().slice(0, 10),
       notes: `${newTraining}${subType === "open" ? " • اشتراك مفتوح" : ""}`,
+      sessions_total: Number(newSessions) || 0,
       recorded_by: u.user?.id,
-    });
+    } as any);
 
     setTrainingType(newTraining);
     toast.success(`تم إضافة العضو • الكود ${code}`);
-    setNewName(""); setNewPhone(""); setNewAmount(""); setNewMonths("1");
+    setNewName(""); setNewPhone(""); setNewAmount(""); setNewMonths("1"); setNewSessions("0");
     setSelected(member as Member);
     setMode("existing");
     qc.invalidateQueries();
@@ -213,14 +253,34 @@ function AttendancePage() {
           )}
 
           {selected && (
-            <div className="flex items-center justify-between p-4 rounded-lg gradient-hero shadow-glow">
-              <div className="text-primary-foreground">
-                <p className="text-sm opacity-90">العضو المحدد</p>
-                <p className="text-xl font-black">{selected.name} • #{selected.code}</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 rounded-lg gradient-hero shadow-glow flex-wrap gap-3">
+                <div className="text-primary-foreground">
+                  <p className="text-sm opacity-90">العضو المحدد</p>
+                  <p className="text-xl font-black">{selected.name} • #{selected.code}</p>
+                  {status?.kind === "active" && (
+                    <p className="text-sm opacity-95 mt-1">
+                      {status.expired
+                        ? "⛔ الاشتراك منتهي"
+                        : status.remaining !== null
+                          ? status.remaining > 0
+                            ? <>متبقي <span className="num font-black">{status.remaining}</span> من <span className="num">{status.total}</span> حصة</>
+                            : "⛔ انتهت الحصص"
+                          : <>اشتراك شهري — ينتهي <span className="num">{status.payment.end_date}</span></>}
+                    </p>
+                  )}
+                  {status?.kind === "none" && <p className="text-sm opacity-95 mt-1">⚠ لا يوجد اشتراك مسجل</p>}
+                </div>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="font-bold"
+                  onClick={() => recordAttendance(selected)}
+                  disabled={status?.kind === "active" && (status.expired || (status.remaining !== null && status.remaining <= 0))}
+                >
+                  <Check className="size-5 ml-1" /> تسجيل الحضور
+                </Button>
               </div>
-              <Button size="lg" variant="secondary" className="font-bold" onClick={() => recordAttendance(selected)}>
-                <Check className="size-5 ml-1" /> تسجيل الحضور
-              </Button>
             </div>
           )}
         </Card>
@@ -273,6 +333,10 @@ function AttendancePage() {
                 <Input type="number" min="1" value={newMonths} onChange={(e) => setNewMonths(e.target.value)} className="num" />
               </div>
             )}
+            <div className="space-y-2">
+              <Label>عدد الحصص <span className="text-xs text-muted-foreground">(0 = غير محدود / بالشهر)</span></Label>
+              <Input type="number" min="0" value={newSessions} onChange={(e) => setNewSessions(e.target.value)} className="num" />
+            </div>
           </div>
           <Button onClick={addNewMember} className="w-full font-bold" size="lg">
             <UserPlus className="size-5 ml-1" /> إضافة وتسجيل الاشتراك

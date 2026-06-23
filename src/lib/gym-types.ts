@@ -12,6 +12,7 @@ export type TrainingType = {
   name: string;
   sort_order: number;
   price: number;
+  sessions_count: number;
 };
 
 export type AttendanceRow = {
@@ -33,4 +34,5 @@ export type Payment = {
   end_date: string;
   notes: string | null;
   created_at: string;
+  sessions_total: number;
 };

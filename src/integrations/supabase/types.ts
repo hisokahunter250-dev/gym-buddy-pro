@@ -104,6 +104,7 @@ export type Database = {
           member_id: string
           notes: string | null
           recorded_by: string | null
+          sessions_total: number
           start_date: string
         }
         Insert: {
@@ -115,6 +116,7 @@ export type Database = {
           member_id: string
           notes?: string | null
           recorded_by?: string | null
+          sessions_total?: number
           start_date?: string
         }
         Update: {
@@ -126,6 +128,7 @@ export type Database = {
           member_id?: string
           notes?: string | null
           recorded_by?: string | null
+          sessions_total?: number
           start_date?: string
         }
         Relationships: [
@@ -165,6 +168,7 @@ export type Database = {
           id: string
           name: string
           price: number
+          sessions_count: number
           sort_order: number
         }
         Insert: {
@@ -172,6 +176,7 @@ export type Database = {
           id?: string
           name: string
           price?: number
+          sessions_count?: number
           sort_order?: number
         }
         Update: {
@@ -179,6 +184,7 @@ export type Database = {
           id?: string
           name?: string
           price?: number
+          sessions_count?: number
           sort_order?: number
         }
         Relationships: []
