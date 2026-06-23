@@ -37,6 +37,7 @@ function AttendancePage() {
   const [newPhone, setNewPhone] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newMonths, setNewMonths] = useState("1");
+  const [newSessions, setNewSessions] = useState("0");
   const [newTraining, setNewTraining] = useState<string>("");
   const [subType, setSubType] = useState<"monthly" | "open">("monthly");
   const [nextCode, setNextCode] = useState<number | null>(null);
@@ -55,13 +56,17 @@ function AttendancePage() {
     if (!newTraining && trainings.length) {
       setNewTraining(trainings[0].name);
       setNewAmount(String(trainings[0].price || ""));
+      setNewSessions(String(trainings[0].sessions_count || 0));
     }
   }, [trainings, trainingType, newTraining]);
 
   const onPickNewTraining = (name: string) => {
     setNewTraining(name);
     const t = trainings.find(x => x.name === name);
-    if (t) setNewAmount(String(t.price || ""));
+    if (t) {
+      setNewAmount(String(t.price || ""));
+      setNewSessions(String(t.sessions_count || 0));
+    }
   };
 
   const { data: matches = [] } = useQuery({
