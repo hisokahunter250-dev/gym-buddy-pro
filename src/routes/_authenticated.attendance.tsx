@@ -103,8 +103,41 @@ function AttendancePage() {
     supabase.rpc("next_member_code").then(({ data }) => setNextCode(data as number));
   }, [mode]);
 
+  const { data: status } = useQuery({
+    queryKey: ["member-status", selected?.id],
+    enabled: !!selected?.id,
+    queryFn: async () => {
+      const { data: pay } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("member_id", selected!.id)
+        .order("start_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!pay) return { kind: "none" as const };
+      const today = todayISO();
+      const expired = pay.end_date < today;
+      let used = 0;
+      if ((pay as any).sessions_total > 0) {
+        const { count } = await supabase
+          .from("attendance")
+          .select("id", { count: "exact", head: true })
+          .eq("member_id", selected!.id)
+          .gte("attendance_date", pay.start_date);
+        used = count ?? 0;
+      }
+      const total = (pay as any).sessions_total as number;
+      const remaining = total > 0 ? Math.max(0, total - used) : null;
+      return { kind: "active" as const, payment: pay, expired, total, used, remaining };
+    },
+  });
+
   const recordAttendance = async (m: Member) => {
     if (!trainingType) return toast.error("اختر نوع التدريب");
+    if (status?.kind === "active") {
+      if (status.expired) return toast.error("الاشتراك منتهي");
+      if (status.remaining !== null && status.remaining <= 0) return toast.error("انتهت حصص الاشتراك");
+    }
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("attendance").insert({
       member_id: m.id,
@@ -117,6 +150,7 @@ function AttendancePage() {
     setSelected(null);
     setSearch("");
     qc.invalidateQueries({ queryKey: ["attendance-today"] });
+    qc.invalidateQueries({ queryKey: ["member-status"] });
   };
 
   const checkOut = async (id: string) => {
@@ -150,12 +184,13 @@ function AttendancePage() {
       start_date: todayISO(),
       end_date: end.toISOString().slice(0, 10),
       notes: `${newTraining}${subType === "open" ? " • اشتراك مفتوح" : ""}`,
+      sessions_total: Number(newSessions) || 0,
       recorded_by: u.user?.id,
-    });
+    } as any);
 
     setTrainingType(newTraining);
     toast.success(`تم إضافة العضو • الكود ${code}`);
-    setNewName(""); setNewPhone(""); setNewAmount(""); setNewMonths("1");
+    setNewName(""); setNewPhone(""); setNewAmount(""); setNewMonths("1"); setNewSessions("0");
     setSelected(member as Member);
     setMode("existing");
     qc.invalidateQueries();
