@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://gxhsgcwjvatsvolrkikv.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "gym-buddy-pro",
+      "version": "0.1.0",
+      "title": "Gym Buddy Pro"
+    },
+    "tools": [
+      {
+        "name": "list_members",
+        "title": "قائمة الأعضاء / List members",
+        "description": "List gym members, optionally filtered by name or member code.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Filter by member name or code."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max rows to return (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_member",
+        "title": "بيانات عضو / Member details",
+        "description": "Get one member by code, with their latest subscription (amount, dates, sessions) and attendance count.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "The member code."
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_attendance",
+        "title": "سجل الحضور / Attendance log",
+        "description": "List check-in/check-out records. Filter by date range (YYYY-MM-DD) and/or member code. Defaults to today.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "Start date YYYY-MM-DD."
+            },
+            "to": {
+              "type": "string",
+              "description": "End date YYYY-MM-DD."
+            },
+            "member_code": {
+              "type": "integer",
+              "description": "Only this member's records."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max rows (default 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_training_types",
+        "title": "أنواع التدريب / Training plans",
+        "description": "List the gym's training plans with their price and included session count.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "finance_summary",
+        "title": "ملخص مالي / Finance summary",
+        "description": "Revenue summary for a month: number of subscriptions and total collected amount (month format YYYY-MM, defaults to current month).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "month": {
+              "type": "string",
+              "description": "Month as YYYY-MM."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "check_in_member",
+        "title": "تسجيل حضور / Check in member",
+        "description": "Record today's check-in for a member by code with the given training type.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "Member code."
+            },
+            "training_type": {
+              "type": "string",
+              "description": "Training plan name, e.g. from list_training_types."
+            }
+          },
+          "required": [
+            "code",
+            "training_type"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
