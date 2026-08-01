@@ -12,22 +12,33 @@ import { signInWithUsername, signUpWithUsername } from "@/lib/gym-auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "تسجيل الدخول - نظام الجيم" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") ? s.next : undefined,
+  }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [loading, setLoading] = useState(false);
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
 
+  const goAfterAuth = () => {
+    if (next) window.location.href = next;
+    else navigate({ to: "/attendance" });
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/attendance" });
+      if (!data.session) return;
+      if (next) window.location.href = next;
+      else navigate({ to: "/attendance" });
     });
     supabase.from("profiles").select("id", { count: "exact", head: true }).then(({ count }) => {
       setHasUsers((count ?? 0) > 0);
     });
-  }, [navigate]);
+  }, [navigate, next]);
 
   const onLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,8 +48,9 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error("بيانات الدخول غير صحيحة");
     toast.success("تم الدخول بنجاح");
-    navigate({ to: "/attendance" });
+    goAfterAuth();
   };
+
 
   const onSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
