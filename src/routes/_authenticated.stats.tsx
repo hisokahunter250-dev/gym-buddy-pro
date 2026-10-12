@@ -12,7 +12,7 @@ import { Search, X } from "lucide-react";
 import type { Member, AttendanceRow } from "@/lib/gym-types";
 
 export const Route = createFileRoute("/_authenticated/stats")({
-  head: () => ({ meta: [{ title: "إحصائيات الحضور - الجيم" }] }),
+  head: () => ({ meta: [{ title: "إحصائيات الحضور - الجيم" }, { name: "description", content: "إحصائيات حضور أعضاء الجيم وسجلات التدريب." }, { property: "og:title", content: "إحصائيات الحضور - الجيم" }, { property: "og:description", content: "إحصائيات حضور أعضاء الجيم وسجلات التدريب." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: StatsPage,
 });
 

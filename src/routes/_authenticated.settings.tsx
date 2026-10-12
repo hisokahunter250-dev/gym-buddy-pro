@@ -2,7 +2,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,14 @@ import { useRef } from "react";
 import { useTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "الإعدادات - الجيم" }] }),
+  head: () => ({ meta: [
+    { title: "الإعدادات - إدارة الجيم" },
+    { name: "description", content: "إعدادات الجيم وأنواع التدريب والأسعار والمستخدمين ومظهر الموقع." },
+    { property: "og:title", content: "الإعدادات - إدارة الجيم" },
+    { property: "og:description", content: "إعدادات الجيم وأنواع التدريب والأسعار والمستخدمين ومظهر الموقع." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   beforeLoad: async () => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) throw redirect({ to: "/auth" });
@@ -30,8 +36,9 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   return (
-    <Tabs defaultValue="general" className="space-y-4">
-      <TabsList className="flex-wrap h-auto">
+    <Tabs defaultValue="general" dir="rtl" className="settings-page space-y-6 text-start">
+      <h2 className="text-2xl font-bold">الإعدادات</h2>
+      <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto rounded-none bg-transparent p-0 pb-3">
         <TabsTrigger value="general">عام</TabsTrigger>
         <TabsTrigger value="training">أنواع التدريب والأسعار</TabsTrigger>
         <TabsTrigger value="users">المستخدمون</TabsTrigger>
@@ -77,7 +84,7 @@ function GeneralPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4 max-w-xl">
+    <section className="settings-panel space-y-5 max-w-xl">
       <div className="flex items-center gap-2">
         <Building2 className="size-5 text-primary" />
         <h3 className="font-black text-lg">اسم الجيم</h3>
@@ -88,7 +95,7 @@ function GeneralPanel() {
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثال: جيم النصر" />
       </div>
       <Button onClick={save} disabled={loading} className="font-bold"><Save className="size-4 ml-1" />{loading ? "..." : "حفظ"}</Button>
-    </Card>
+    </section>
   );
 }
 
@@ -129,7 +136,7 @@ function BackupPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-6 max-w-2xl">
+    <section className="settings-panel space-y-6 max-w-2xl">
       <div className="flex items-center gap-2">
         <Database className="size-5 text-primary" />
         <h3 className="font-black text-lg">النسخ الاحتياطي</h3>
@@ -158,7 +165,7 @@ function BackupPanel() {
           <Upload className="size-4 ml-1" />{busy === "import" ? "جاري الاستيراد..." : "اختيار ملف للاستيراد"}
         </Button>
       </div>
-    </Card>
+    </section>
   );
 }
 
@@ -198,7 +205,7 @@ function TrainingTypesPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4">
+    <section className="settings-panel space-y-5">
       <h3 className="font-black text-lg">أنواع التدريب والأسعار</h3>
       <p className="text-sm text-muted-foreground">عدد الحصص = 0 يعني اشتراك بالشهر (بدون عدّ حصص).</p>
       <div className="grid md:grid-cols-[1fr_140px_140px_auto] gap-2">
@@ -210,7 +217,7 @@ function TrainingTypesPanel() {
       <div className="space-y-2">
         {types.map(t => <TrainingRow key={t.id} t={t} onChanged={() => qc.invalidateQueries({ queryKey: ["training_types"] })} onRemove={() => remove(t.id)} />)}
       </div>
-    </Card>
+    </section>
   );
 }
 
@@ -286,7 +293,7 @@ function UsersPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4">
+    <section className="settings-panel space-y-5">
       <h3 className="font-black text-lg">المستخدمون</h3>
       <div className="grid md:grid-cols-4 gap-3">
         <div className="space-y-1">
@@ -308,7 +315,7 @@ function UsersPanel() {
       <div className="space-y-2">
         {users.map(u => <UserRow key={u.id} u={u} onChanged={() => qc.invalidateQueries({ queryKey: ["all-users"] })} />)}
       </div>
-    </Card>
+    </section>
   );
 }
 
@@ -358,7 +365,7 @@ function UserRow({ u, onChanged }: { u: { id: string; username: string; display_
         <p className="font-semibold">{u.display_name || u.username}</p>
         <p className="text-xs text-muted-foreground" dir="ltr">{u.username}</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Badge className={isAdmin ? "bg-gold text-gold-foreground" : ""}>{isAdmin ? "مدير" : "موظف"}</Badge>
         <Button size="sm" variant="outline" onClick={toggleRole} disabled={busy}>
           {isAdmin ? <><ShieldOff className="size-4 ml-1" />إزالة المدير</> : <><Shield className="size-4 ml-1" />جعله مدير</>}
@@ -388,7 +395,7 @@ function AdminPasswordPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4 max-w-md">
+    <section className="settings-panel space-y-5 max-w-md">
       <div className="flex items-center gap-2">
         <Lock className="size-5 text-primary" />
         <h3 className="font-black text-lg">تغيير كلمة مرور الحساب الحالي</h3>
@@ -403,7 +410,7 @@ function AdminPasswordPanel() {
         <Input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} dir="ltr" className="text-right" />
       </div>
       <Button onClick={save} disabled={loading} className="font-bold"><Save className="size-4 ml-1" />{loading ? "..." : "حفظ"}</Button>
-    </Card>
+    </section>
   );
 }
 
@@ -422,7 +429,7 @@ function FinancePasswordPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4 max-w-md">
+    <section className="settings-panel space-y-5 max-w-md">
       <div className="flex items-center gap-2">
         <KeyRound className="size-5 text-gold" />
         <h3 className="font-black text-lg">كلمة سر تبويب المالية</h3>
@@ -433,19 +440,19 @@ function FinancePasswordPanel() {
         <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} dir="ltr" className="text-right num" />
       </div>
       <Button onClick={save} disabled={loading} className="font-bold">{loading ? "..." : "حفظ"}</Button>
-    </Card>
+    </section>
   );
 }
 
 function ThemePanel() {
   const { theme, setTheme } = useTheme();
-  const options: { id: Theme; label: string; desc: string; preview: string }[] = [
-    { id: "dark", label: "غامق رياضي", desc: "أسود وأحمر وذهبي — الستايل الافتراضي", preview: "linear-gradient(135deg, oklch(0.14 0.01 30), oklch(0.58 0.22 25))" },
-    { id: "light", label: "فاتح كلاسيكي", desc: "خلفية بيضاء وألوان واضحة", preview: "linear-gradient(135deg, oklch(0.99 0.005 80), oklch(0.55 0.22 25))" },
-    { id: "modern", label: "مودرن", desc: "أزرق/بنفسجي عصري بخلفية فاتحة", preview: "linear-gradient(135deg, oklch(0.55 0.2 260), oklch(0.65 0.18 290))" },
+  const options: { id: Theme; label: string; desc: string }[] = [
+    { id: "dark", label: "غامق رياضي", desc: "أسود وأحمر وذهبي" },
+    { id: "light", label: "فاتح عصري", desc: "رمادي هادئ ولمسات حمراء" },
+    { id: "modern", label: "مودرن", desc: "ألوان زرقاء بخلفية فاتحة" },
   ];
   return (
-    <Card className="p-6 space-y-4">
+    <section className="settings-panel space-y-5">
       <div className="flex items-center gap-2">
         <Palette className="size-5 text-primary" />
         <h3 className="font-black text-lg">ستايل الموقع</h3>
@@ -453,18 +460,20 @@ function ThemePanel() {
       <p className="text-sm text-muted-foreground">اختر شكل الموقع المفضل لك. التغيير يتم فورًا ويُحفظ على الجهاز.</p>
       <div className="grid md:grid-cols-3 gap-3">
         {options.map(o => (
-          <button
+          <Button
             key={o.id}
+            variant="outline"
+            aria-pressed={theme === o.id}
             onClick={() => setTheme(o.id)}
-            className={`p-4 rounded-xl border-2 text-right transition-all ${theme === o.id ? "border-primary shadow-glow" : "border-border hover:border-primary/50"}`}
+            className={`h-auto min-w-0 flex-col items-stretch whitespace-normal p-4 rounded-lg border-2 text-start transition-all ${theme === o.id ? "border-primary bg-accent/30" : "border-border hover:border-primary/50"}`}
           >
-            <div className="h-20 rounded-lg mb-3" style={{ background: o.preview }} />
-            <p className="font-black">{o.label}</p>
-            <p className="text-xs text-muted-foreground mt-1">{o.desc}</p>
-            {theme === o.id && <Badge className="mt-2">مُفعّل</Badge>}
-          </button>
+            <span aria-hidden="true" className={`theme-swatch theme-swatch-${o.id} h-20 rounded-md mb-1`} />
+            <span className="font-bold">{o.label}</span>
+            <span className="text-xs text-muted-foreground">{o.desc}</span>
+            <span className="h-6">{theme === o.id && <Badge>مُفعّل</Badge>}</span>
+          </Button>
         ))}
       </div>
-    </Card>
+    </section>
   );
 }
