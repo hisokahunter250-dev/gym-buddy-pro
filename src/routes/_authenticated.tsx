@@ -5,6 +5,7 @@ import { Dumbbell, LogOut, UserCheck, Users, BarChart3, Wallet, Settings as Sett
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import formaLogo from "@/assets/forma-logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -66,9 +67,7 @@ function AuthLayout() {
       <header className="border-b border-border/60 bg-sidebar/70 backdrop-blur-xl sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="size-10 rounded-xl gradient-hero flex items-center justify-center shadow-glow">
-              <Dumbbell className="size-5 text-primary-foreground" />
-            </div>
+            <img src={formaLogo.url} alt="شعار فورما جيم" className="size-12 rounded-xl object-cover shadow-glow" />
             <div>
               <h1 className="text-lg font-black leading-tight">{gymName}</h1>
               <p className="text-xs text-muted-foreground">{profileName} {isAdmin && <span className="text-gold font-bold">• مدير</span>}</p>
