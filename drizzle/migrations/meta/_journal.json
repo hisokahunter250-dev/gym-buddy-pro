@@ -8,6 +8,13 @@
       "when": 1791826399064,
       "tag": "0000_payments_discount",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791832475160,
+      "tag": "0001_gym_logo_storage_permissions",
+      "breakpoints": true
     }
   ]
 }
