@@ -15,6 +15,7 @@ import { exportJSON, exportXLSX, importFromFile } from "@/lib/backup";
 import { deleteAppUser } from "@/lib/admin.functions";
 import { useRef } from "react";
 import { useTheme, type Theme } from "@/lib/theme";
+import { GymLogoSettings } from "@/components/gym-logo-settings";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [
@@ -95,6 +96,7 @@ function GeneralPanel() {
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثال: جيم النصر" />
       </div>
       <Button onClick={save} disabled={loading} className="font-bold"><Save className="size-4 ml-1" />{loading ? "..." : "حفظ"}</Button>
+      <GymLogoSettings />
     </section>
   );
 }

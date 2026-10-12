@@ -7,6 +7,7 @@ export function GymLogo({ className }: { className?: string }) {
   const [source, setSource] = useState(data);
   useEffect(() => setSource(data), [data]);
   return <img src={source} alt="شعار الجيم" className={className} onError={() => {
+    if (source === "/favicon.png") return;
     setSource(source === DEFAULT_GYM_LOGO ? "/favicon.png" : DEFAULT_GYM_LOGO);
   }} />;
 }
