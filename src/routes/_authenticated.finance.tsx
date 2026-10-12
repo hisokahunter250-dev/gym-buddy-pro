@@ -12,7 +12,7 @@ import type { Payment } from "@/lib/gym-types";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/finance")({
-  head: () => ({ meta: [{ title: "المالية - الجيم" }] }),
+  head: () => ({ meta: [{ title: "المالية - الجيم" }, { name: "description", content: "ملخص اشتراكات الجيم والتحصيل الشهري." }, { property: "og:title", content: "المالية - الجيم" }, { property: "og:description", content: "ملخص اشتراكات الجيم والتحصيل الشهري." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: FinancePage,
 });
 

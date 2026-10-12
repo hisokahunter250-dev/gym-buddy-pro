@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import type { Member, Payment } from "@/lib/gym-types";
 
 export const Route = createFileRoute("/_authenticated/members")({
-  head: () => ({ meta: [{ title: "الأعضاء - الجيم" }] }),
+  head: () => ({ meta: [{ title: "الأعضاء - الجيم" }, { name: "description", content: "بيانات أعضاء الجيم واشتراكاتهم." }, { property: "og:title", content: "الأعضاء - الجيم" }, { property: "og:description", content: "بيانات أعضاء الجيم واشتراكاتهم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: MembersPage,
 });
 

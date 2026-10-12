@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithUsername, signUpWithUsername } from "@/lib/gym-auth";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "تسجيل الدخول - نظام الجيم" }] }),
+  head: () => ({ meta: [{ title: "تسجيل الدخول - نظام الجيم" }, { name: "description", content: "تسجيل الدخول إلى حساب إدارة الجيم." }, { property: "og:title", content: "تسجيل الدخول - نظام الجيم" }, { property: "og:description", content: "تسجيل الدخول إلى حساب إدارة الجيم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   validateSearch: (s: Record<string, unknown>): { next?: string } =>
     typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
       ? { next: s.next }
