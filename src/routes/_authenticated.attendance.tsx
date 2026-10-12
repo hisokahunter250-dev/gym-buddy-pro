@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { SubscriptionForm, defaultSub, savePayment, finalAmount, type SubValues } from "@/components/subscription-form";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, UserPlus, LogIn, LogOut as LogOutIcon, Search } from "lucide-react";
+import { Check, UserPlus, Trash2, RefreshCw, LogIn, LogOut as LogOutIcon, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Member, TrainingType, AttendanceRow } from "@/lib/gym-types";
 
@@ -35,11 +36,9 @@ function AttendancePage() {
   // New member form
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newAmount, setNewAmount] = useState("");
-  const [newMonths, setNewMonths] = useState("1");
-  const [newSessions, setNewSessions] = useState("0");
-  const [newTraining, setNewTraining] = useState<string>("");
-  const [subType, setSubType] = useState<"monthly" | "open">("monthly");
+  const [newSub, setNewSub] = useState<SubValues | null>(null);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [renewSub, setRenewSub] = useState<SubValues | null>(null);
   const [nextCode, setNextCode] = useState<number | null>(null);
 
   const { data: trainings = [] } = useQuery({
@@ -53,21 +52,8 @@ function AttendancePage() {
 
   useEffect(() => {
     if (!trainingType && trainings.length) setTrainingType(trainings[0].name);
-    if (!newTraining && trainings.length) {
-      setNewTraining(trainings[0].name);
-      setNewAmount(String(trainings[0].price || ""));
-      setNewSessions(String(trainings[0].sessions_count || 0));
-    }
-  }, [trainings, trainingType, newTraining]);
-
-  const onPickNewTraining = (name: string) => {
-    setNewTraining(name);
-    const t = trainings.find(x => x.name === name);
-    if (t) {
-      setNewAmount(String(t.price || ""));
-      setNewSessions(String(t.sessions_count || 0));
-    }
-  };
+    if (!newSub && trainings.length) setNewSub(defaultSub(trainings));
+  }, [trainings, trainingType, newSub]);
 
   const { data: matches = [] } = useQuery({
     queryKey: ["members-search", search],
@@ -160,37 +146,46 @@ function AttendancePage() {
     qc.invalidateQueries({ queryKey: ["attendance-today"] });
   };
 
+  const deleteAttendance = async (id: string, name?: string) => {
+    if (!confirm(`حذف حضور ${name ?? ""}؟`)) return;
+    const { error } = await supabase.from("attendance").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("تم حذف الحضور");
+    qc.invalidateQueries({ queryKey: ["attendance-today"] });
+    qc.invalidateQueries({ queryKey: ["member-status"] });
+  };
+
+  const openRenew = () => {
+    setRenewSub(defaultSub(trainings, trainingType));
+    setRenewOpen(true);
+  };
+
+  const doRenew = async () => {
+    if (!selected || !renewSub) return;
+    if (!renewSub.training) return toast.error("اختر نوع التدريب");
+    if (finalAmount(renewSub) <= 0 && !confirm("المبلغ صفر، متابعة؟")) return;
+    const { error } = await savePayment(selected.id, renewSub);
+    if (error) return toast.error(error.message);
+    setTrainingType(renewSub.training);
+    toast.success(`تم تجديد اشتراك ${selected.name}`);
+    setRenewOpen(false);
+    qc.invalidateQueries();
+  };
+
   const addNewMember = async () => {
     if (!newName.trim()) return toast.error("ادخل اسم العميل");
-    if (!newAmount || Number(newAmount) <= 0) return toast.error("ادخل مبلغ الاشتراك");
-    if (!newTraining) return toast.error("اختر نوع التدريب");
-    const months = subType === "monthly" ? Math.max(1, Number(newMonths) || 1) : 0;
+    if (!newSub?.training) return toast.error("اختر نوع التدريب");
+    if (!newSub.amount || Number(newSub.amount) <= 0) return toast.error("ادخل مبلغ الاشتراك");
     const code = nextCode ?? 1001;
-    const { data: u } = await supabase.auth.getUser();
-
     const { data: member, error } = await supabase.from("members").insert({
       code, name: newName.trim(), phone: newPhone.trim() || null,
     }).select().single();
     if (error) return toast.error(error.message);
-
-    const start = new Date();
-    const end = new Date(start);
-    if (subType === "monthly") end.setMonth(end.getMonth() + months);
-    else end.setFullYear(end.getFullYear() + 10); // open-ended
-    await supabase.from("payments").insert({
-      member_id: member.id,
-      amount: Number(newAmount),
-      duration_months: months,
-      start_date: todayISO(),
-      end_date: end.toISOString().slice(0, 10),
-      notes: `${newTraining}${subType === "open" ? " • اشتراك مفتوح" : ""}`,
-      sessions_total: Number(newSessions) || 0,
-      recorded_by: u.user?.id,
-    } as any);
-
-    setTrainingType(newTraining);
+    const { error: pErr } = await savePayment(member.id, newSub);
+    if (pErr) toast.error(pErr.message);
+    setTrainingType(newSub.training);
     toast.success(`تم إضافة العضو • الكود ${code}`);
-    setNewName(""); setNewPhone(""); setNewAmount(""); setNewMonths("1"); setNewSessions("0");
+    setNewName(""); setNewPhone(""); setNewSub(defaultSub(trainings));
     setSelected(member as Member);
     setMode("existing");
     qc.invalidateQueries();
@@ -261,7 +256,7 @@ function AttendancePage() {
                   {status?.kind === "active" && (
                     <p className="text-sm opacity-95 mt-1">
                       {status.expired
-                        ? "⛔ الاشتراك منتهي"
+                        ? <span className="font-black">⛔ الاشتراك منتهي منذ <span className="num">{status.payment.end_date}</span></span>
                         : status.remaining !== null
                           ? status.remaining > 0
                             ? <>متبقي <span className="num font-black">{status.remaining}</span> من <span className="num">{status.total}</span> حصة</>
@@ -271,6 +266,10 @@ function AttendancePage() {
                   )}
                   {status?.kind === "none" && <p className="text-sm opacity-95 mt-1">⚠ لا يوجد اشتراك مسجل</p>}
                 </div>
+                <div className="flex gap-2 flex-wrap">
+                <Button size="lg" variant="outline" className="font-bold" onClick={openRenew}>
+                  <RefreshCw className="size-5 ml-1" /> {status?.kind === "none" ? "تسجيل اشتراك" : "تجديد الاشتراك"}
+                </Button>
                 <Button
                   size="lg"
                   variant="secondary"
@@ -280,6 +279,7 @@ function AttendancePage() {
                 >
                   <Check className="size-5 ml-1" /> تسجيل الحضور
                 </Button>
+                </div>
               </div>
             </div>
           )}
@@ -299,45 +299,8 @@ function AttendancePage() {
               <Label>رقم الموبايل (اختياري)</Label>
               <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} dir="ltr" className="text-right num" />
             </div>
-            <div className="space-y-2">
-              <Label>نوع التدريب / الخطة</Label>
-              <Select value={newTraining} onValueChange={onPickNewTraining}>
-                <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
-                <SelectContent>
-                  {trainings.map(t => (
-                    <SelectItem key={t.id} value={t.name}>
-                      {t.name} {t.price ? `— ${t.price} ج.م` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>مبلغ الاشتراك (جنيه)</Label>
-              <Input type="number" min="0" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="num" />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>نوع الاشتراك</Label>
-              <RadioGroup value={subType} onValueChange={(v) => setSubType(v as "monthly" | "open")} className="flex gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="monthly" id="st-m" /> <span>اشتراك شهري بعدد أشهر</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="open" id="st-o" /> <span>اشتراك حر / مفتوح</span>
-                </label>
-              </RadioGroup>
-            </div>
-            {subType === "monthly" && (
-              <div className="space-y-2">
-                <Label>المدة (عدد الأشهر)</Label>
-                <Input type="number" min="1" value={newMonths} onChange={(e) => setNewMonths(e.target.value)} className="num" />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label>عدد الحصص <span className="text-xs text-muted-foreground">(0 = غير محدود / بالشهر)</span></Label>
-              <Input type="number" min="0" value={newSessions} onChange={(e) => setNewSessions(e.target.value)} className="num" />
-            </div>
           </div>
+          {newSub && <SubscriptionForm value={newSub} onChange={setNewSub} trainings={trainings} />}
           <Button onClick={addNewMember} className="w-full font-bold" size="lg">
             <UserPlus className="size-5 ml-1" /> إضافة وتسجيل الاشتراك
           </Button>
@@ -373,11 +336,16 @@ function AttendancePage() {
                   <TableCell className="num">{new Date(a.checked_in_at).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</TableCell>
                   <TableCell className="num">{a.checked_out_at ? new Date(a.checked_out_at).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "—"}</TableCell>
                   <TableCell>
+                    <div className="flex gap-1 justify-end">
                     {!a.checked_out_at && (
                       <Button size="sm" variant="ghost" onClick={() => checkOut(a.id)}>
                         <LogOutIcon className="size-4 ml-1" /> انصراف
                       </Button>
                     )}
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteAttendance(a.id, a.members?.name)} aria-label="حذف">
+                      <Trash2 className="size-4" />
+                    </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -385,6 +353,15 @@ function AttendancePage() {
           </Table>
         </div>
       </Card>
+      <Dialog open={renewOpen} onOpenChange={setRenewOpen}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader><DialogTitle>تجديد اشتراك {selected?.name} • #{selected?.code}</DialogTitle></DialogHeader>
+          {renewSub && <SubscriptionForm value={renewSub} onChange={setRenewSub} trainings={trainings} />}
+          <DialogFooter>
+            <Button onClick={doRenew} className="font-bold w-full"><RefreshCw className="size-4 ml-1" /> حفظ التجديد</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
