@@ -67,7 +67,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="ar" dir="rtl" className="dark">
       <head><HeadContent /></head>
       <body>
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('gym-theme')||'dark';document.documentElement.classList.remove('dark','light','modern');document.documentElement.classList.add(t);}catch(e){}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('gym-theme')||'dark';document.documentElement.classList.remove('dark','light','modern','forma');document.documentElement.classList.add(t);}catch(e){}` }} />
         {children}
         <Scripts />
       </body>
