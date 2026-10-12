@@ -2,7 +2,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,14 @@ import { useRef } from "react";
 import { useTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "الإعدادات - الجيم" }] }),
+  head: () => ({ meta: [
+    { title: "الإعدادات - إدارة الجيم" },
+    { name: "description", content: "إعدادات الجيم وأنواع التدريب والأسعار والمستخدمين ومظهر الموقع." },
+    { property: "og:title", content: "الإعدادات - إدارة الجيم" },
+    { property: "og:description", content: "إعدادات الجيم وأنواع التدريب والأسعار والمستخدمين ومظهر الموقع." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   beforeLoad: async () => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) throw redirect({ to: "/auth" });
@@ -30,8 +36,9 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   return (
-    <Tabs defaultValue="general" className="space-y-4">
-      <TabsList className="flex-wrap h-auto">
+    <Tabs defaultValue="general" dir="rtl" className="settings-page space-y-6 text-start">
+      <h2 className="text-2xl font-bold">الإعدادات</h2>
+      <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto rounded-none bg-transparent p-0 pb-3">
         <TabsTrigger value="general">عام</TabsTrigger>
         <TabsTrigger value="training">أنواع التدريب والأسعار</TabsTrigger>
         <TabsTrigger value="users">المستخدمون</TabsTrigger>
@@ -439,10 +446,10 @@ function FinancePasswordPanel() {
 
 function ThemePanel() {
   const { theme, setTheme } = useTheme();
-  const options: { id: Theme; label: string; desc: string; preview: string }[] = [
-    { id: "dark", label: "غامق رياضي", desc: "أسود وأحمر وذهبي — الستايل الافتراضي", preview: "linear-gradient(135deg, oklch(0.14 0.01 30), oklch(0.58 0.22 25))" },
-    { id: "light", label: "فاتح كلاسيكي", desc: "خلفية بيضاء وألوان واضحة", preview: "linear-gradient(135deg, oklch(0.99 0.005 80), oklch(0.55 0.22 25))" },
-    { id: "modern", label: "مودرن", desc: "أزرق/بنفسجي عصري بخلفية فاتحة", preview: "linear-gradient(135deg, oklch(0.55 0.2 260), oklch(0.65 0.18 290))" },
+  const options: { id: Theme; label: string; desc: string }[] = [
+    { id: "dark", label: "غامق رياضي", desc: "أسود وأحمر وذهبي" },
+    { id: "light", label: "فاتح عصري", desc: "رمادي هادئ ولمسات حمراء" },
+    { id: "modern", label: "مودرن", desc: "ألوان زرقاء بخلفية فاتحة" },
   ];
   return (
     <Card className="p-6 space-y-4">
@@ -453,16 +460,18 @@ function ThemePanel() {
       <p className="text-sm text-muted-foreground">اختر شكل الموقع المفضل لك. التغيير يتم فورًا ويُحفظ على الجهاز.</p>
       <div className="grid md:grid-cols-3 gap-3">
         {options.map(o => (
-          <button
+          <Button
             key={o.id}
+            variant="outline"
+            aria-pressed={theme === o.id}
             onClick={() => setTheme(o.id)}
-            className={`p-4 rounded-xl border-2 text-right transition-all ${theme === o.id ? "border-primary shadow-glow" : "border-border hover:border-primary/50"}`}
+            className={`h-auto min-w-0 flex-col items-stretch whitespace-normal p-4 rounded-lg border-2 text-start transition-all ${theme === o.id ? "border-primary bg-accent/30" : "border-border hover:border-primary/50"}`}
           >
-            <div className="h-20 rounded-lg mb-3" style={{ background: o.preview }} />
-            <p className="font-black">{o.label}</p>
-            <p className="text-xs text-muted-foreground mt-1">{o.desc}</p>
-            {theme === o.id && <Badge className="mt-2">مُفعّل</Badge>}
-          </button>
+            <span aria-hidden="true" className={`theme-swatch theme-swatch-${o.id} h-20 rounded-md mb-1`} />
+            <span className="font-bold">{o.label}</span>
+            <span className="text-xs text-muted-foreground">{o.desc}</span>
+            <span className="h-6">{theme === o.id && <Badge>مُفعّل</Badge>}</span>
+          </Button>
         ))}
       </div>
     </Card>
