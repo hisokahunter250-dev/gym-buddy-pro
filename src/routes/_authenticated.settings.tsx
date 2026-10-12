@@ -84,7 +84,7 @@ function GeneralPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4 max-w-xl">
+    <section className="settings-panel space-y-5 max-w-xl">
       <div className="flex items-center gap-2">
         <Building2 className="size-5 text-primary" />
         <h3 className="font-black text-lg">اسم الجيم</h3>
@@ -95,7 +95,7 @@ function GeneralPanel() {
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثال: جيم النصر" />
       </div>
       <Button onClick={save} disabled={loading} className="font-bold"><Save className="size-4 ml-1" />{loading ? "..." : "حفظ"}</Button>
-    </Card>
+    </section>
   );
 }
 
@@ -136,7 +136,7 @@ function BackupPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-6 max-w-2xl">
+    <section className="settings-panel space-y-6 max-w-2xl">
       <div className="flex items-center gap-2">
         <Database className="size-5 text-primary" />
         <h3 className="font-black text-lg">النسخ الاحتياطي</h3>
@@ -165,7 +165,7 @@ function BackupPanel() {
           <Upload className="size-4 ml-1" />{busy === "import" ? "جاري الاستيراد..." : "اختيار ملف للاستيراد"}
         </Button>
       </div>
-    </Card>
+    </section>
   );
 }
 
@@ -205,7 +205,7 @@ function TrainingTypesPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4">
+    <section className="settings-panel space-y-5">
       <h3 className="font-black text-lg">أنواع التدريب والأسعار</h3>
       <p className="text-sm text-muted-foreground">عدد الحصص = 0 يعني اشتراك بالشهر (بدون عدّ حصص).</p>
       <div className="grid md:grid-cols-[1fr_140px_140px_auto] gap-2">
@@ -217,7 +217,7 @@ function TrainingTypesPanel() {
       <div className="space-y-2">
         {types.map(t => <TrainingRow key={t.id} t={t} onChanged={() => qc.invalidateQueries({ queryKey: ["training_types"] })} onRemove={() => remove(t.id)} />)}
       </div>
-    </Card>
+    </section>
   );
 }
 
@@ -293,7 +293,7 @@ function UsersPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4">
+    <section className="settings-panel space-y-5">
       <h3 className="font-black text-lg">المستخدمون</h3>
       <div className="grid md:grid-cols-4 gap-3">
         <div className="space-y-1">
@@ -315,7 +315,7 @@ function UsersPanel() {
       <div className="space-y-2">
         {users.map(u => <UserRow key={u.id} u={u} onChanged={() => qc.invalidateQueries({ queryKey: ["all-users"] })} />)}
       </div>
-    </Card>
+    </section>
   );
 }
 
@@ -365,7 +365,7 @@ function UserRow({ u, onChanged }: { u: { id: string; username: string; display_
         <p className="font-semibold">{u.display_name || u.username}</p>
         <p className="text-xs text-muted-foreground" dir="ltr">{u.username}</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Badge className={isAdmin ? "bg-gold text-gold-foreground" : ""}>{isAdmin ? "مدير" : "موظف"}</Badge>
         <Button size="sm" variant="outline" onClick={toggleRole} disabled={busy}>
           {isAdmin ? <><ShieldOff className="size-4 ml-1" />إزالة المدير</> : <><Shield className="size-4 ml-1" />جعله مدير</>}
@@ -395,7 +395,7 @@ function AdminPasswordPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4 max-w-md">
+    <section className="settings-panel space-y-5 max-w-md">
       <div className="flex items-center gap-2">
         <Lock className="size-5 text-primary" />
         <h3 className="font-black text-lg">تغيير كلمة مرور الحساب الحالي</h3>
@@ -410,7 +410,7 @@ function AdminPasswordPanel() {
         <Input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} dir="ltr" className="text-right" />
       </div>
       <Button onClick={save} disabled={loading} className="font-bold"><Save className="size-4 ml-1" />{loading ? "..." : "حفظ"}</Button>
-    </Card>
+    </section>
   );
 }
 
@@ -429,7 +429,7 @@ function FinancePasswordPanel() {
   };
 
   return (
-    <Card className="p-6 space-y-4 max-w-md">
+    <section className="settings-panel space-y-5 max-w-md">
       <div className="flex items-center gap-2">
         <KeyRound className="size-5 text-gold" />
         <h3 className="font-black text-lg">كلمة سر تبويب المالية</h3>
@@ -440,7 +440,7 @@ function FinancePasswordPanel() {
         <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} dir="ltr" className="text-right num" />
       </div>
       <Button onClick={save} disabled={loading} className="font-bold">{loading ? "..." : "حفظ"}</Button>
-    </Card>
+    </section>
   );
 }
 
@@ -452,7 +452,7 @@ function ThemePanel() {
     { id: "modern", label: "مودرن", desc: "ألوان زرقاء بخلفية فاتحة" },
   ];
   return (
-    <Card className="p-6 space-y-4">
+    <section className="settings-panel space-y-5">
       <div className="flex items-center gap-2">
         <Palette className="size-5 text-primary" />
         <h3 className="font-black text-lg">ستايل الموقع</h3>
@@ -474,6 +474,6 @@ function ThemePanel() {
           </Button>
         ))}
       </div>
-    </Card>
+    </section>
   );
 }
