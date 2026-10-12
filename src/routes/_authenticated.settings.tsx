@@ -447,10 +447,10 @@ function FinancePasswordPanel() {
 function ThemePanel() {
   const { theme, setTheme } = useTheme();
   const options: { id: Theme; label: string; desc: string }[] = [
+    { id: "forma", label: "فورما (الافتراضي)", desc: "أسود فاحم ولمسات صفراء" },
     { id: "dark", label: "غامق رياضي", desc: "أسود وأحمر وذهبي" },
     { id: "light", label: "فاتح عصري", desc: "رمادي هادئ ولمسات حمراء" },
     { id: "modern", label: "مودرن", desc: "ألوان زرقاء بخلفية فاتحة" },
-    { id: "forma", label: "فورما", desc: "أسود فاحم ولمسات صفراء" },
   ];
   return (
     <section className="settings-panel space-y-5">

@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_THEME } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -64,10 +65,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className="dark">
+    <html lang="ar" dir="rtl" className={DEFAULT_THEME}>
       <head><HeadContent /></head>
       <body>
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('gym-theme')||'dark';document.documentElement.classList.remove('dark','light','modern','forma');document.documentElement.classList.add(t);}catch(e){}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('gym-theme')||'${DEFAULT_THEME}';document.documentElement.classList.remove('dark','light','modern','forma');document.documentElement.classList.add(t);}catch(e){}` }} />
         {children}
         <Scripts />
       </body>
