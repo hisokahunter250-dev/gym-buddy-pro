@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Search, Plus, RefreshCw } from "lucide-react";
+import { Search, Plus, RefreshCw, Upload } from "lucide-react";
+import { importMembersFromExcel } from "@/lib/import-members";
 import { toast } from "sonner";
 import type { Member, Payment } from "@/lib/gym-types";
 
@@ -68,7 +69,20 @@ function MembersPage() {
               <Input value={search} onChange={(e) => setSearch(e.target.value)} className="pr-10" placeholder="ابحث..." />
             </div>
           </div>
+          <label className="inline-flex">
+            <input type="file" accept=".xlsx,.xls" className="hidden" onChange={async (e) => {
+              const f = e.target.files?.[0]; e.target.value = "";
+              if (!f) return;
+              try {
+                const r = await importMembersFromExcel(f);
+                toast.success(`تم استيراد ${r.inserted} عضو${r.skipped ? ` — تم تخطي ${r.skipped}` : ""}`);
+                qc.invalidateQueries();
+              } catch (err: any) { toast.error(err.message ?? "فشل الاستيراد"); }
+            }} />
+            <Button asChild variant="outline"><span className="cursor-pointer"><Upload className="size-4 ml-1" />استيراد من Excel</span></Button>
+          </label>
         </div>
+        <p className="text-xs text-muted-foreground mb-3">الأعمدة: الكود، الاسم، الموبايل (الكود اختياري — يُنشأ تلقائياً إذا كان فارغاً، والأكواد المكررة تُتخطى).</p>
 
         <div className="overflow-x-auto">
           <Table>
