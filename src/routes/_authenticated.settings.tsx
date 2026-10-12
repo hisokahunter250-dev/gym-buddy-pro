@@ -450,6 +450,7 @@ function ThemePanel() {
     { id: "dark", label: "غامق رياضي", desc: "أسود وأحمر وذهبي" },
     { id: "light", label: "فاتح عصري", desc: "رمادي هادئ ولمسات حمراء" },
     { id: "modern", label: "مودرن", desc: "ألوان زرقاء بخلفية فاتحة" },
+    { id: "forma", label: "فورما", desc: "أسود فاحم ولمسات صفراء" },
   ];
   return (
     <section className="settings-panel space-y-5">
