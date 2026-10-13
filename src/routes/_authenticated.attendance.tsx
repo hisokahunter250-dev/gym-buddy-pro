@@ -93,15 +93,14 @@ function AttendancePage() {
     queryKey: ["member-status", selected?.id],
     enabled: !!selected?.id,
     queryFn: async () => {
-      const { data: pay } = await supabase
+      const today = todayISO();
+      const { data: pays } = await supabase
         .from("payments")
         .select("*")
         .eq("member_id", selected!.id)
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("start_date", { ascending: false });
+      const pay = (pays ?? []).find((p) => p.start_date <= today) ?? (pays ?? [])[0];
       if (!pay) return { kind: "none" as const };
-      const today = todayISO();
       const expired = pay.end_date < today;
       let used = 0;
       if ((pay as any).sessions_total > 0) {
