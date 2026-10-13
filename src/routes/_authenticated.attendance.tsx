@@ -257,6 +257,12 @@ function AttendancePage() {
                           : <>اشتراك شهري — ينتهي <span className="num">{status.payment.end_date}</span></>}
                     </p>
                   )}
+                  {status?.kind === "active" && !status.expired && (
+                    <p className="text-sm opacity-95 mt-1">
+                      مدة الاشتراك: من <span className="num">{status.payment.start_date}</span> إلى <span className="num">{status.payment.end_date}</span>
+                      {status.payment.duration_months > 0 && <> (<span className="num">{status.payment.duration_months}</span> شهر)</>}
+                    </p>
+                  )}
                   {status?.kind === "none" && <p className="text-sm opacity-95 mt-1">⚠ لا يوجد اشتراك مسجل</p>}
                 </div>
                 <div className="flex gap-2 flex-wrap">
