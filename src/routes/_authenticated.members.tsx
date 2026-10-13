@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Search, Plus, RefreshCw, Upload } from "lucide-react";
+import { Search, RefreshCw, Upload, List, Trash2 } from "lucide-react";
 import { importMembersFromExcel } from "@/lib/import-members";
 import { toast } from "sonner";
-import type { Member, Payment } from "@/lib/gym-types";
-import { savePayment } from "@/components/subscription-form";
+import type { Member, Payment, TrainingType } from "@/lib/gym-types";
+import { savePayment, SubscriptionForm, defaultSub, finalAmount, type SubValues } from "@/components/subscription-form";
 
 export const Route = createFileRoute("/_authenticated/members")({
   head: () => ({ meta: [{ title: "الأعضاء - الجيم" }, { name: "description", content: "بيانات أعضاء الجيم واشتراكاتهم." }, { property: "og:title", content: "الأعضاء - الجيم" }, { property: "og:description", content: "بيانات أعضاء الجيم واشتراكاتهم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -117,8 +117,9 @@ function MembersPage() {
                                : <Badge variant="destructive">منتهي</Badge>
                       ) : <Badge variant="outline">بدون اشتراك</Badge>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="flex gap-1">
                       <RenewDialog member={m} onDone={() => qc.invalidateQueries()} />
+                      <SubsDialog member={m} payments={payments} onDone={() => qc.invalidateQueries()} />
                     </TableCell>
                   </TableRow>
                 );
@@ -131,45 +132,94 @@ function MembersPage() {
   );
 }
 
+function useTrainings() {
+  return useQuery({
+    queryKey: ["training-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("training_types").select("*").order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as TrainingType[];
+    },
+  });
+}
+
 function RenewDialog({ member, onDone }: { member: Member; onDone: () => void }) {
   const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [months, setMonths] = useState("1");
+  const { data: trainings = [] } = useTrainings();
+  const [sub, setSub] = useState<SubValues | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const openDialog = (o: boolean) => {
+    setOpen(o);
+    if (o) setSub(defaultSub(trainings));
+  };
+
   const submit = async () => {
-    if (!amount || Number(amount) <= 0) return toast.error("ادخل المبلغ");
+    if (!sub) return;
+    if (!sub.training) return toast.error("اختر الباقة");
+    if (finalAmount(sub) <= 0 && !(Number(sub.amount) > 0)) return toast.error("ادخل المبلغ");
     setLoading(true);
-    const { error } = await savePayment(member.id, {
-      training: "تجديد", subType: "monthly", months, amount, discount: "0", sessions: "0",
-    });
+    const { error } = await savePayment(member.id, sub);
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("تم التجديد");
-    setOpen(false); setAmount(""); setMonths("1");
+    setOpen(false);
     onDone();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={openDialog}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline"><RefreshCw className="size-4 ml-1" />تجديد</Button>
       </DialogTrigger>
-      <DialogContent dir="rtl">
+      <DialogContent dir="rtl" className="max-w-2xl">
         <DialogHeader><DialogTitle>تجديد اشتراك — {member.name} #{member.code}</DialogTitle></DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>المبلغ (جنيه)</Label>
-            <Input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} className="num" />
-          </div>
-          <div className="space-y-2">
-            <Label>المدة (شهر)</Label>
-            <Input type="number" min="1" value={months} onChange={(e) => setMonths(e.target.value)} className="num" />
-          </div>
-        </div>
+        {sub && <SubscriptionForm value={sub} onChange={setSub} trainings={trainings} />}
         <DialogFooter>
           <Button onClick={submit} disabled={loading} className="font-bold w-full">{loading ? "..." : "حفظ التجديد"}</Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SubsDialog({ member, payments, onDone }: { member: Member; payments: Payment[]; onDone: () => void }) {
+  const list = payments.filter((p) => p.member_id === member.id).sort((a, b) => b.start_date.localeCompare(a.start_date));
+  const remove = async (id: string) => {
+    if (!confirm("متأكد إنك عايز تحذف الاشتراك ده؟")) return;
+    const { error, count } = await supabase.from("payments").delete({ count: "exact" }).eq("id", id);
+    if (error) return toast.error(error.message);
+    if (!count) return toast.error("حذف الاشتراكات متاح للمدير فقط");
+    toast.success("تم حذف الاشتراك");
+    onDone();
+  };
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost"><List className="size-4 ml-1" />الاشتراكات</Button>
+      </DialogTrigger>
+      <DialogContent dir="rtl" className="max-w-2xl">
+        <DialogHeader><DialogTitle>اشتراكات — {member.name} #{member.code}</DialogTitle></DialogHeader>
+        {list.length === 0 ? <p className="text-muted-foreground text-center py-6">لا توجد اشتراكات</p> : (
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>الباقة</TableHead><TableHead>من</TableHead><TableHead>إلى</TableHead><TableHead>المبلغ</TableHead><TableHead></TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
+              {list.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell>{p.notes || "—"}</TableCell>
+                  <TableCell className="num">{p.start_date}</TableCell>
+                  <TableCell className="num">{p.end_date}</TableCell>
+                  <TableCell className="num">{p.amount} ج.م</TableCell>
+                  <TableCell>
+                    <Button size="sm" variant="destructive" onClick={() => remove(p.id)}><Trash2 className="size-4" /></Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </DialogContent>
     </Dialog>
   );
