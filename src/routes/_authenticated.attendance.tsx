@@ -113,7 +113,9 @@ function AttendancePage() {
       }
       const total = (pay as any).sessions_total as number;
       const remaining = total > 0 ? Math.max(0, total - used) : null;
-      return { kind: "active" as const, payment: pay, expired, total, used, remaining };
+      const finalEnd = (pays ?? []).reduce((mx, p) => (p.end_date > mx ? p.end_date : mx), pay.end_date);
+      const upcoming = (pays ?? []).filter((p) => p.start_date > today).length;
+      return { kind: "active" as const, payment: pay, expired, total, used, remaining, finalEnd, upcoming };
     },
   });
 
@@ -260,6 +262,11 @@ function AttendancePage() {
                     <p className="text-sm opacity-95 mt-1">
                       مدة الاشتراك: من <span className="num">{status.payment.start_date}</span> إلى <span className="num">{status.payment.end_date}</span>
                       {status.payment.duration_months > 0 && <> (<span className="num">{status.payment.duration_months}</span> شهر)</>}
+                      {status.upcoming > 0 && (
+                        <span className="block font-black mt-1">
+                          ✅ تم التجديد مقدماً ({status.upcoming}) — الاشتراك ممتد حتى <span className="num">{status.finalEnd}</span>
+                        </span>
+                      )}
                     </p>
                   )}
                   {status?.kind === "none" && <p className="text-sm opacity-95 mt-1">⚠ لا يوجد اشتراك مسجل</p>}
