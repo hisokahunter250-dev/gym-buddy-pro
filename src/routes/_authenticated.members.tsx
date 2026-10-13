@@ -13,6 +13,7 @@ import { Search, Plus, RefreshCw, Upload } from "lucide-react";
 import { importMembersFromExcel } from "@/lib/import-members";
 import { toast } from "sonner";
 import type { Member, Payment } from "@/lib/gym-types";
+import { savePayment } from "@/components/subscription-form";
 
 export const Route = createFileRoute("/_authenticated/members")({
   head: () => ({ meta: [{ title: "الأعضاء - الجيم" }, { name: "description", content: "بيانات أعضاء الجيم واشتراكاتهم." }, { property: "og:title", content: "الأعضاء - الجيم" }, { property: "og:description", content: "بيانات أعضاء الجيم واشتراكاتهم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -139,17 +140,8 @@ function RenewDialog({ member, onDone }: { member: Member; onDone: () => void })
   const submit = async () => {
     if (!amount || Number(amount) <= 0) return toast.error("ادخل المبلغ");
     setLoading(true);
-    const m = Math.max(1, Number(months) || 1);
-    const start = new Date();
-    const end = new Date(start); end.setMonth(end.getMonth() + m);
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("payments").insert({
-      member_id: member.id,
-      amount: Number(amount),
-      duration_months: m,
-      start_date: start.toISOString().slice(0, 10),
-      end_date: end.toISOString().slice(0, 10),
-      recorded_by: u.user?.id,
+    const { error } = await savePayment(member.id, {
+      training: "تجديد", subType: "monthly", months, amount, discount: "0", sessions: "0",
     });
     setLoading(false);
     if (error) return toast.error(error.message);

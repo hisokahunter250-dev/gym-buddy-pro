@@ -34,9 +34,21 @@ function localISO(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Renewal starts the day after the current subscription ends (if still active), else today. */
+export function renewalStart(today: Date, currentEnd?: string | null) {
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (currentEnd && currentEnd >= localISO(t)) {
+    const [y, m, d] = currentEnd.split("-").map(Number);
+    return new Date(y, m - 1, d + 1);
+  }
+  return t;
+}
+
 export async function savePayment(memberId: string, v: SubValues) {
   const months = v.subType === "monthly" ? Math.max(1, Number(v.months) || 1) : 0;
-  const start = new Date();
+  const { data: last } = await supabase.from("payments").select("end_date")
+    .eq("member_id", memberId).order("end_date", { ascending: false }).limit(1).maybeSingle();
+  const start = renewalStart(new Date(), last?.end_date);
   const end = new Date(start);
   if (v.subType === "monthly") end.setMonth(end.getMonth() + months);
   else end.setFullYear(end.getFullYear() + 10);

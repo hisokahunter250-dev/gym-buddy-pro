@@ -93,15 +93,14 @@ function AttendancePage() {
     queryKey: ["member-status", selected?.id],
     enabled: !!selected?.id,
     queryFn: async () => {
-      const { data: pay } = await supabase
+      const today = todayISO();
+      const { data: pays } = await supabase
         .from("payments")
         .select("*")
         .eq("member_id", selected!.id)
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("start_date", { ascending: false });
+      const pay = (pays ?? []).find((p) => p.start_date <= today) ?? (pays ?? [])[0];
       if (!pay) return { kind: "none" as const };
-      const today = todayISO();
       const expired = pay.end_date < today;
       let used = 0;
       if ((pay as any).sessions_total > 0) {
@@ -255,6 +254,12 @@ function AttendancePage() {
                             ? <>متبقي <span className="num font-black">{status.remaining}</span> من <span className="num">{status.total}</span> حصة</>
                             : "⛔ انتهت الحصص"
                           : <>اشتراك شهري — ينتهي <span className="num">{status.payment.end_date}</span></>}
+                    </p>
+                  )}
+                  {status?.kind === "active" && !status.expired && (
+                    <p className="text-sm opacity-95 mt-1">
+                      مدة الاشتراك: من <span className="num">{status.payment.start_date}</span> إلى <span className="num">{status.payment.end_date}</span>
+                      {status.payment.duration_months > 0 && <> (<span className="num">{status.payment.duration_months}</span> شهر)</>}
                     </p>
                   )}
                   {status?.kind === "none" && <p className="text-sm opacity-95 mt-1">⚠ لا يوجد اشتراك مسجل</p>}
