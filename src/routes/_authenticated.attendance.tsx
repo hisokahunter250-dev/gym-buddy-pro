@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import type { Member, TrainingType, AttendanceRow } from "@/lib/gym-types";
 
 export const Route = createFileRoute("/_authenticated/attendance")({
-  head: () => ({ meta: [{ title: "الحضور اليومي - الجيم" }, { name: "description", content: "متابعة الحضور والانصراف اليومي واشتراكات أعضاء الجيم." }, { property: "og:title", content: "الحضور اليومي - الجيم" }, { property: "og:description", content: "متابعة الحضور والانصراف اليومي واشتراكات أعضاء الجيم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "الحضور اليومي - الجيم" }, { name: "description", content: "متابعة الحضور اليومي واشتراكات أعضاء الجيم." }, { property: "og:title", content: "الحضور اليومي - الجيم" }, { property: "og:description", content: "متابعة الحضور اليومي واشتراكات أعضاء الجيم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: AttendancePage,
 });
 
