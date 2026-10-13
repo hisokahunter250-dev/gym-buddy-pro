@@ -114,7 +114,7 @@ function AttendancePage() {
       const total = (pay as any).sessions_total as number;
       const remaining = total > 0 ? Math.max(0, total - used) : null;
       const finalEnd = (pays ?? []).reduce((mx, p) => (p.end_date > mx ? p.end_date : mx), pay.end_date);
-      const upcoming = (pays ?? []).filter((p) => p.start_date > today).length;
+      const upcoming = (pays ?? []).filter((p) => p.start_date > today).reduce((s, p) => s + (p.duration_months || 0), 0);
       return { kind: "active" as const, payment: pay, expired, total, used, remaining, finalEnd, upcoming };
     },
   });
