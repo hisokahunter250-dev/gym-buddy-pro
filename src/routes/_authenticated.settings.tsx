@@ -11,7 +11,7 @@ import { Trash2, Plus, KeyRound, Save, Palette, Download, Upload, Database, Buil
 import { toast } from "sonner";
 import type { TrainingType } from "@/lib/gym-types";
 import { signUpWithUsername } from "@/lib/gym-auth";
-import { exportJSON, exportXLSX, importFromFile } from "@/lib/backup";
+import { exportJSON, exportXLSX, importFromFile, deleteAllData } from "@/lib/backup";
 import { deleteAppUser } from "@/lib/admin.functions";
 import { useRef } from "react";
 import { useTheme, type Theme } from "@/lib/theme";
@@ -165,6 +165,27 @@ function BackupPanel() {
         <input ref={fileRef} type="file" accept=".json,.xlsx,.xls" className="hidden" onChange={onPick} />
         <Button onClick={() => fileRef.current?.click()} disabled={!!busy} variant="secondary" className="font-bold">
           <Upload className="size-4 ml-1" />{busy === "import" ? "جاري الاستيراد..." : "اختيار ملف للاستيراد"}
+        </Button>
+      </div>
+
+      <div className="space-y-3 pt-4 border-t">
+        <h4 className="font-bold text-destructive">حذف كل البيانات</h4>
+        <p className="text-sm text-muted-foreground">
+          يحذف كل الأعضاء والحضور والاشتراكات نهائياً. أنواع التدريب والإعدادات والمستخدمين لا تُحذف. صدّر نسخة احتياطية الأول.
+        </p>
+        <Button variant="destructive" disabled={!!busy} className="font-bold" onClick={async () => {
+          const ok = prompt('للتأكيد اكتب كلمة "حذف"');
+          if (ok?.trim() !== "حذف") return;
+          setBusy("import");
+          try {
+            await deleteAllData();
+            toast.success("تم حذف كل البيانات");
+            qc.invalidateQueries();
+          } catch (err: any) {
+            toast.error(err.message || "فشل الحذف");
+          } finally { setBusy(null); }
+        }}>
+          <Trash2 className="size-4 ml-1" />حذف كل البيانات
         </Button>
       </div>
     </section>

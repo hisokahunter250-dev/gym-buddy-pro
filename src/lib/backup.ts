@@ -74,6 +74,13 @@ export async function importFromFile(file: File): Promise<{ table: string; inser
   return results;
 }
 
+export async function deleteAllData() {
+  for (const t of ["attendance", "payments", "members"] as const) {
+    const { error } = await supabase.from(t).delete().not("id", "is", null);
+    if (error) throw new Error(`${t}: ${error.message}`);
+  }
+}
+
 function stamp() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
