@@ -12,12 +12,12 @@ import { SubscriptionForm, defaultSub, savePayment, finalAmount, type SubValues 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, UserPlus, Trash2, RefreshCw, LogIn, LogOut as LogOutIcon, Search } from "lucide-react";
+import { Check, UserPlus, Trash2, RefreshCw, LogIn, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Member, TrainingType, AttendanceRow } from "@/lib/gym-types";
 
 export const Route = createFileRoute("/_authenticated/attendance")({
-  head: () => ({ meta: [{ title: "الحضور اليومي - الجيم" }, { name: "description", content: "متابعة الحضور والانصراف اليومي واشتراكات أعضاء الجيم." }, { property: "og:title", content: "الحضور اليومي - الجيم" }, { property: "og:description", content: "متابعة الحضور والانصراف اليومي واشتراكات أعضاء الجيم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "الحضور اليومي - الجيم" }, { name: "description", content: "متابعة الحضور اليومي واشتراكات أعضاء الجيم." }, { property: "og:title", content: "الحضور اليومي - الجيم" }, { property: "og:description", content: "متابعة الحضور اليومي واشتراكات أعضاء الجيم." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: AttendancePage,
 });
 
@@ -137,13 +137,6 @@ function AttendancePage() {
     setSearch("");
     qc.invalidateQueries({ queryKey: ["attendance-today"] });
     qc.invalidateQueries({ queryKey: ["member-status"] });
-  };
-
-  const checkOut = async (id: string) => {
-    const { error } = await supabase.from("attendance").update({ checked_out_at: new Date().toISOString() }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("تم تسجيل الانصراف");
-    qc.invalidateQueries({ queryKey: ["attendance-today"] });
   };
 
   const deleteAttendance = async (id: string, name?: string) => {
@@ -320,13 +313,12 @@ function AttendancePage() {
                 <TableHead>الاسم</TableHead>
                 <TableHead>التدريب</TableHead>
                 <TableHead>وقت الحضور</TableHead>
-                <TableHead>الانصراف</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {today.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">لا يوجد حضور اليوم بعد</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">لا يوجد حضور اليوم بعد</TableCell></TableRow>
               )}
               {today.map(a => (
                 <TableRow key={a.id}>
@@ -334,14 +326,8 @@ function AttendancePage() {
                   <TableCell className="font-semibold">{a.members?.name}</TableCell>
                   <TableCell><Badge variant="outline">{a.training_type}</Badge></TableCell>
                   <TableCell className="num">{new Date(a.checked_in_at).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</TableCell>
-                  <TableCell className="num">{a.checked_out_at ? new Date(a.checked_out_at).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "—"}</TableCell>
                   <TableCell>
                     <div className="flex gap-1 justify-end">
-                    {!a.checked_out_at && (
-                      <Button size="sm" variant="ghost" onClick={() => checkOut(a.id)}>
-                        <LogOutIcon className="size-4 ml-1" /> انصراف
-                      </Button>
-                    )}
                     <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteAttendance(a.id, a.members?.name)} aria-label="حذف">
                       <Trash2 className="size-4" />
                     </Button>
